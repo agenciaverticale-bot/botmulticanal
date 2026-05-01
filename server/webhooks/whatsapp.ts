@@ -14,6 +14,7 @@ import {
   checkImportantKeywords,
   notifyIntegrationError,
 } from "../services/notifications";
+import { sendWhatsAppMessage } from "../services/messaging";
 
 const router = Router();
 
@@ -112,8 +113,15 @@ router.post("/", async (req: Request, res: Response) => {
 
       // Validar resposta
       if (validateResponse(response)) {
-        // TODO: Enviar resposta automática via Evolution API
-        // await sendWhatsAppMessage(phoneNumber, response);
+        let messageStatus = "sent";
+
+        try {
+          await sendWhatsAppMessage(userId, phoneNumber, response);
+        } catch (error: unknown) {
+          messageStatus = "failed";
+          console.error("[WhatsApp] Erro ao enviar mensagem automática:", error);
+          await notifyIntegrationError(userId, "whatsapp", String(error));
+        }
 
         // Salvar mensagem automática
         await saveMessage({
@@ -124,12 +132,13 @@ router.post("/", async (req: Request, res: Response) => {
           direction: "outbound",
           messageType: "text",
           content: response,
-          status: "sent",
+          status: messageStatus,
           automatedResponse: true,
         });
 
-        // Resetar contador de não lidos
-        await updateConversationUnreadCount(conversation.id, 0);
+        if (messageStatus === "sent") {
+          await updateConversationUnreadCount(conversation.id, 0);
+        }
       }
     }
 

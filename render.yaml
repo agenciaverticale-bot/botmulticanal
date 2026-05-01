@@ -1,0 +1,72 @@
+services:
+  - type: web
+    name: botmulticanal
+    runtime: docker
+    plan: standard
+    
+    # Build configuration
+    dockerfilePath: ./Dockerfile
+    
+    # Environment variables
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: botmulticanal_db
+          property: connectionString
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: VITE_APP_ID
+        sync: false
+      - key: OAUTH_SERVER_URL
+        sync: false
+      - key: VITE_OAUTH_PORTAL_URL
+        sync: false
+      - key: OWNER_OPEN_ID
+        sync: false
+      - key: OWNER_NAME
+        sync: false
+      - key: BUILT_IN_FORGE_API_URL
+        sync: false
+      - key: BUILT_IN_FORGE_API_KEY
+        sync: false
+      - key: VITE_FRONTEND_FORGE_API_URL
+        sync: false
+      - key: VITE_FRONTEND_FORGE_API_KEY
+        sync: false
+    
+    # Build settings
+    buildCommand: pnpm build
+    startCommand: node dist/index.js
+    
+    # Health check
+    healthCheckPath: /health
+    
+    # Auto-deploy from GitHub
+    repo: https://github.com/YOUR_USERNAME/botmulticanal
+    branch: main
+    autoDeploy: true
+    
+    # Scaling
+    numInstances: 1
+    
+    # Disk
+    disk:
+      name: botmulticanal_disk
+      mountPath: /data
+      sizeGB: 10
+
+# Uncomment below if you want to add a PostgreSQL database
+# databases:
+#   - name: botmulticanal_db
+#     engine: postgres
+#     plan: standard
+#     version: "15"
+#     ipAllowList: []

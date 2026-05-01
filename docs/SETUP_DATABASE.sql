@@ -42,8 +42,8 @@ CREATE TABLE IF NOT EXISTS "contacts" (
     UNIQUE("userId", "externalId", "platform")
 );
 
-CREATE INDEX "idx_contacts_user_id" ON "contacts"("userId");
-CREATE INDEX "idx_contacts_user_platform" ON "contacts"("userId", "platform");
+CREATE INDEX IF NOT EXISTS "idx_contacts_user_id" ON "contacts"("userId");
+CREATE INDEX IF NOT EXISTS "idx_contacts_user_platform" ON "contacts"("userId", "platform");
 
 -- Tabela de conversas
 CREATE TABLE IF NOT EXISTS "conversations" (
@@ -60,9 +60,9 @@ CREATE TABLE IF NOT EXISTS "conversations" (
     "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX "idx_conversations_user_id" ON "conversations"("userId");
-CREATE INDEX "idx_conversations_user_status" ON "conversations"("userId", "status");
-CREATE INDEX "idx_conversations_user_platform" ON "conversations"("userId", "platform");
+CREATE INDEX IF NOT EXISTS "idx_conversations_user_id" ON "conversations"("userId");
+CREATE INDEX IF NOT EXISTS "idx_conversations_user_status" ON "conversations"("userId", "status");
+CREATE INDEX IF NOT EXISTS "idx_conversations_user_platform" ON "conversations"("userId", "platform");
 
 -- Tabela de mensagens
 CREATE TABLE IF NOT EXISTS "messages" (
@@ -86,8 +86,8 @@ CREATE TABLE IF NOT EXISTS "messages" (
     "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX "idx_messages_conversation_id" ON "messages"("conversationId");
-CREATE INDEX "idx_messages_user_created" ON "messages"("userId", "createdAt");
+CREATE INDEX IF NOT EXISTS "idx_messages_conversation_id" ON "messages"("conversationId");
+CREATE INDEX IF NOT EXISTS "idx_messages_user_created" ON "messages"("userId", "createdAt");
 
 -- Tabela de regras de chatbot
 CREATE TABLE IF NOT EXISTS "chatbot_rules" (
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS "chatbot_rules" (
     "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX "idx_chatbot_rules_user_active" ON "chatbot_rules"("userId", "isActive");
+CREATE INDEX IF NOT EXISTS "idx_chatbot_rules_user_active" ON "chatbot_rules"("userId", "isActive");
 
 -- Tabela de credenciais de API
 CREATE TABLE IF NOT EXISTS "api_credentials" (
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS "api_credentials" (
     UNIQUE("userId", "platform")
 );
 
-CREATE INDEX "idx_api_credentials_user_id" ON "api_credentials"("userId");
+CREATE INDEX IF NOT EXISTS "idx_api_credentials_user_id" ON "api_credentials"("userId");
 
 -- Tabela de configurações de notificação
 CREATE TABLE IF NOT EXISTS "notification_settings" (
@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS "notification_logs" (
     "sentAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX "idx_notification_logs_user_type" ON "notification_logs"("userId", "type");
+CREATE INDEX IF NOT EXISTS "idx_notification_logs_user_type" ON "notification_logs"("userId", "type");
 
 -- ============================================================
 -- FIM DO SCRIPT

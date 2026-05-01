@@ -14,6 +14,7 @@ import {
   checkImportantKeywords,
   notifyIntegrationError,
 } from "../services/notifications";
+import { sendInstagramMessage } from "../services/messaging";
 
 const router = Router();
 
@@ -127,8 +128,15 @@ router.post("/", async (req: Request, res: Response) => {
 
           // Validar resposta
           if (validateResponse(response)) {
-            // TODO: Enviar resposta automática via Meta Graph API
-            // await sendInstagramMessage(senderHandle, response);
+            let messageStatus = "sent";
+
+            try {
+              await sendInstagramMessage(userId, senderHandle, response);
+            } catch (error: unknown) {
+              messageStatus = "failed";
+              console.error("[Instagram] Erro ao enviar mensagem automática:", error);
+              await notifyIntegrationError(userId, "instagram", String(error));
+            }
 
             // Salvar mensagem automática
             await saveMessage({
@@ -139,12 +147,13 @@ router.post("/", async (req: Request, res: Response) => {
               direction: "outbound",
               messageType: "text",
               content: response,
-              status: "sent",
+              status: messageStatus,
               automatedResponse: true,
             });
 
-            // Resetar contador de não lidos
-            await updateConversationUnreadCount(conversation.id, 0);
+            if (messageStatus === "sent") {
+              await updateConversationUnreadCount(conversation.id, 0);
+            }
           }
         }
 
