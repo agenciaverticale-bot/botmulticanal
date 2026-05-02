@@ -28,7 +28,8 @@ export function WhatsAppConfig() {
       // Chama a rota que criamos no backend
       const response = await axios.get('/api/whatsapp/qrcode');
       setQrCode(response.data.qrCode);
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Erro na requisição do QR Code:', err.response?.data || err.message);
       setError('Não foi possível carregar o QR Code. Tente novamente.');
     } finally {
       setLoading(false);

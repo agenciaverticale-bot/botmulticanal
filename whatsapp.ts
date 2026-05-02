@@ -31,8 +31,9 @@ whatsappRouter.get('/qrcode', async (req, res) => {
         { instanceName: INSTANCE_NAME },
         { headers: { apikey: API_KEY } }
       );
-    } catch (e) {
+    } catch (e: any) {
       // A Evolution retorna erro se já existe, podemos ignorar
+      console.log('Aviso ao criar instância (pode já existir):', e.response?.data || e.message);
     }
 
     // 2. Busca o QR Code de conexão (retorna a imagem em Base64)
@@ -43,8 +44,8 @@ whatsappRouter.get('/qrcode', async (req, res) => {
 
     // Retornamos o base64 direto para o frontend exibir na tag <img>
     res.json({ qrCode: response.data.base64 });
-  } catch (error) {
-    console.error('Erro ao buscar QR Code da Evolution API:', error);
+  } catch (error: any) {
+    console.error('Erro ao buscar QR Code da Evolution API:', error.response?.data || error.message);
     res.status(500).json({ error: 'Falha ao conectar com a API do WhatsApp' });
   }
 });
