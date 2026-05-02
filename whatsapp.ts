@@ -38,6 +38,7 @@ whatsappRouter.get('/status', async (req, res) => {
           `${EVOLUTION_URL}/webhook/set/${INSTANCE_NAME}`,
           {
             webhook: {
+              enabled: true,
               url: "https://crm.agenciaverticale.com.br/api/whatsapp/webhook",
               byEvents: false,
               base64: false,
@@ -46,7 +47,10 @@ whatsappRouter.get('/status', async (req, res) => {
           },
           { headers: { apikey: API_KEY } }
         );
-      } catch (e) { }
+        console.log("✅ Webhook configurado na Evolution API com sucesso!");
+      } catch (e: any) { 
+        console.error("❌ Erro ao configurar webhook na Evolution:", e.response?.data || e.message);
+      }
     }
     res.json({ state });
   } catch (error) {
@@ -90,10 +94,10 @@ whatsappRouter.get('/qrcode', async (req, res) => {
 whatsappRouter.post('/webhook', async (req, res) => {
   const body = req.body;
 
-  // console.log('💬 Webhook recebido da Evolution API:', JSON.stringify(body, null, 2));
+  console.log('💬 Webhook recebido da Evolution API:', JSON.stringify(body, null, 2));
 
   // A Evolution envia o tipo de evento. Queremos capturar novas mensagens (messages.upsert)
-  if (body.event === 'messages.upsert') {
+  if (body.event === 'messages.upsert' || body.event === 'MESSAGES_UPSERT') {
     if (isBotMuted) {
       console.log('🔇 Bot está silenciado. Ignorando a mensagem recebida.');
       return res.status(200).send('EVENT_RECEIVED');
