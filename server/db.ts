@@ -367,7 +367,7 @@ export async function getMessagesByConversation(conversationId: number, limit = 
     .where(eq(messages.conversationId, conversationId))
     .orderBy(desc(messages.createdAt))
     .limit(limit)
-    .then(res => res.reverse()); // Inverte para manter a ordem cronológica para a IA
+    .then((res: any[]) => res.reverse()); // Inverte para manter a ordem cronológica para a IA
 }
 
 export async function updateMessageStatus(messageId: number, status: "sent" | "delivered" | "read" | "failed") {
