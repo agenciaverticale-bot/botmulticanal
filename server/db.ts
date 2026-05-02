@@ -335,6 +335,13 @@ export async function saveMessage(data: {
   if (!db) throw new Error("Database not available");
 
   const result = await db.insert(messages).values(data).$returningId();
+  
+  // Atualiza a data da última mensagem para a conversa aparecer no topo do Dashboard
+  await db
+    .update(conversations)
+    .set({ lastMessageAt: new Date(), updatedAt: new Date() })
+    .where(eq(conversations.id, data.conversationId));
+    
   return result[0].id;
 }
 
