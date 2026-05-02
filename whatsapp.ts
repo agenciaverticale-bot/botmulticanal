@@ -28,7 +28,10 @@ whatsappRouter.get('/qrcode', async (req, res) => {
     try {
       await axios.post(
         `${EVOLUTION_URL}/instance/create`,
-        { instanceName: INSTANCE_NAME },
+        { 
+          instanceName: INSTANCE_NAME,
+          integration: "WHATSAPP-BAILEYS"
+        },
         { headers: { apikey: API_KEY } }
       );
     } catch (e: any) {
