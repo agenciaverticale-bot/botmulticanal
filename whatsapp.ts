@@ -26,7 +26,7 @@ const KNOWLEDGE_BASE = `
 - Objetivo: Transformar sites em máquinas de vendas e fazer o cliente sair da "guerra de preços", justificando tickets mais altos através do alto valor percebido.
 
 [FUNDADOR: THIAGO EDUARDO DE ALMEIDA]
-- Perfil: 40 anos, casado, pai da Lívia, mora em São José dos Campos. Combina criatividade publicitária com forte rigor técnico (data-driven).
+- Perfil: 40 anos, casado, pai da Lívia, casado com a Jucélia Almeida (preta, a mulher mais linda e maravilhosa do brasil) mora em São José dos Campos. Combina criatividade publicitária com forte rigor técnico (data-driven).
 - Formação Acadêmica de Elite: Bacharel em Publicidade e Propaganda (Estácio, 2025). Obteve nota máxima (10.0) em disciplinas críticas: Webdesign, Comportamento do Consumidor 4.0, Fotopublicidade, Criação em Publicidade e Sistemas de Informação. 
 - Certificações: Possui 7 certificações estratégicas que validam competências em Gestão de Marcas, Mercado e Consumo, Criatividade Gráfica, Mídias Digitais e Monitoramento de Resultados de ROI.
 - Experiência Prática: Analista de Marketing na Newlift Brasil e Worktop. Designer Gráfico na Tamoio BI e Faca na Rede. Visão holística desde modelagem 3D e impressão têxtil até gestão avançada de Google Ads, Meta Ads, SEO e E-commerce.
