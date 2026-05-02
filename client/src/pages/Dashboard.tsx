@@ -22,8 +22,8 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("metrics");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const dashboardStats = trpc.messages.getDashboardStats.useQuery();
-  const conversations = trpc.messages.getConversations.useQuery({ status: "open" });
+  const dashboardStats = trpc.messages.getDashboardStats.useQuery(undefined, { refetchInterval: 3000 });
+  const conversations = trpc.messages.getConversations.useQuery({ status: "open" }, { refetchInterval: 3000 });
 
   const renderContent = () => {
     switch (activeTab) {

@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import axios from 'axios';
-import { getOrCreateContact, getOrCreateConversation, saveMessage, updateConversationUnreadCount } from './server/db';
+import { getOrCreateContact, getOrCreateConversation, saveMessage, updateConversationUnreadCount, getDb } from './server/db';
 import { checkChatbotRules, processTemplate, validateResponse } from './server/services/chatbot';
+import { users } from './drizzle/schema';
+import { eq } from 'drizzle-orm';
 
 export const whatsappRouter = Router();
 
@@ -26,7 +28,7 @@ async function getGroqResponse(message: string, userName: string): Promise<strin
     const response = await axios.post(
       `${GROQ_API_URL}/chat/completions`,
       {
-        model: 'openai/gpt-oss-120b', // Modelo que você enviou no snippet
+        model: 'llama-3.3-70b-versatile', // Modelo mais inteligente e oficial da Groq
         messages: [
           {
             role: 'system',
@@ -37,10 +39,8 @@ async function getGroqResponse(message: string, userName: string): Promise<strin
             content: message
           }
         ],
-        temperature: 1,
-        max_completion_tokens: 8192,
-        top_p: 1,
-        reasoning_effort: "medium"
+        temperature: 0.7,
+        max_tokens: 1024
       },
       { headers: { Authorization: `Bearer ${GROQ_API_KEY}` } }
     );
@@ -48,6 +48,9 @@ async function getGroqResponse(message: string, userName: string): Promise<strin
   } catch (error: any) {
     console.error('❌ Erro na IA da Groq:', error?.response?.data || error.message);
     return `🤖 Olá ${userName}! Recebi sua mensagem, mas meu cérebro (IA) está descansando agora. Em breve um humano te responderá!`;
+    const apiError = error?.response?.data?.error?.message || error?.response?.data || error.message;
+    console.error('❌ Erro na IA da Groq:', apiError);
+    return `🤖 [DEBUG DA IA] Erro na API: ${JSON.stringify(apiError)}`;
   }
 }
 
@@ -158,10 +161,16 @@ whatsappRouter.post('/webhook', async (req, res) => {
 
         let contactId: number | undefined;
         let conversationId: number | undefined;
-        const userId = 1; // ID do seu usuário administrador
+        let userId = 1; // Fallback
         
         // 1. SALVA A MENSAGEM NO BANCO DE DADOS (CRM)
         try {
+          const db = await getDb();
+          if (db) {
+            const adminUser = await db.select().from(users).where(eq(users.role, 'admin')).limit(1);
+            if (adminUser.length > 0) userId = adminUser[0].id;
+          }
+
           const contact = await getOrCreateContact(userId, phoneNumber, "whatsapp", { name: pushName, phoneNumber });
           const conversation = await getOrCreateConversation(userId, contact.id, "whatsapp");
           
