@@ -30,7 +30,7 @@ export function WhatsAppConfig() {
       setQrCode(response.data.qrCode);
     } catch (err: any) {
       console.error('Erro na requisição do QR Code:', err.response?.data || err.message);
-      setError('Não foi possível carregar o QR Code. Tente novamente.');
+      setError(err.response?.data?.error || 'Não foi possível carregar o QR Code. Tente novamente.');
     } finally {
       setLoading(false);
     }
