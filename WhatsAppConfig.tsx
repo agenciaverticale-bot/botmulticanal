@@ -1,11 +1,25 @@
-import { useState } from 'react';
-import { QrCode, RefreshCw, Smartphone } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { QrCode, RefreshCw, Smartphone, VolumeX, Volume2 } from 'lucide-react';
 import axios from 'axios';
 
 export function WhatsAppConfig() {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    axios.get('/api/whatsapp/mute').then(res => setIsMuted(res.data.isMuted)).catch(() => {});
+  }, []);
+
+  const toggleMute = async () => {
+    try {
+      const res = await axios.post('/api/whatsapp/mute', { isMuted: !isMuted });
+      setIsMuted(res.data.isMuted);
+    } catch (err) {
+      console.error('Erro ao alterar status do bot');
+    }
+  };
 
   const fetchQRCode = async () => {
     setLoading(true);
@@ -27,9 +41,20 @@ export function WhatsAppConfig() {
         <div className="p-3 bg-green-100 text-green-600 rounded-lg">
           <Smartphone className="w-6 h-6" />
         </div>
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800">WhatsApp Bot</h2>
-          <p className="text-sm text-gray-500">Conecte seu aparelho escaneando o código</p>
+        <div className="flex-1">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-800">WhatsApp Bot</h2>
+            <button 
+              onClick={toggleMute}
+              className={`p-2 rounded-full transition-colors ${isMuted ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'}`}
+              title={isMuted ? "Ativar Bot" : "Silenciar Bot"}
+            >
+              {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+            </button>
+          </div>
+          <p className="text-sm text-gray-500">
+            {isMuted ? "Bot silenciado (Não enviará respostas)" : "Conecte seu aparelho escaneando o código"}
+          </p>
         </div>
       </div>
 

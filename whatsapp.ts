@@ -9,6 +9,19 @@ const API_KEY = process.env.EVOLUTION_API_KEY || '269b25b90301acfd3f41cad77b9f48
 // Você pode tornar isso dinâmico depois (ex: req.user.id) se tiver múltiplos clientes
 const INSTANCE_NAME = 'bot-verticale'; 
 
+// Variável em memória para controlar se o bot está silenciado
+let isBotMuted = false;
+
+whatsappRouter.get('/mute', (req, res) => {
+  res.json({ isMuted: isBotMuted });
+});
+
+whatsappRouter.post('/mute', (req, res) => {
+  isBotMuted = req.body.isMuted;
+  console.log(`[WhatsApp] Status do Bot alterado. Silenciado: ${isBotMuted}`);
+  res.json({ isMuted: isBotMuted });
+});
+
 whatsappRouter.get('/qrcode', async (req, res) => {
   try {
     // 1. Tenta criar a instância (se ela já existir, a API ignora e seguimos em frente)
@@ -44,6 +57,11 @@ whatsappRouter.post('/webhook', async (req, res) => {
 
   // A Evolution envia o tipo de evento. Queremos capturar novas mensagens (messages.upsert)
   if (body.event === 'messages.upsert') {
+    if (isBotMuted) {
+      console.log('🔇 Bot está silenciado. Ignorando a mensagem recebida.');
+      return res.status(200).send('EVENT_RECEIVED');
+    }
+
     const messageData = body.data;
     
     // Ignoramos mensagens enviadas pelo próprio bot/usuário (fromMe: true)

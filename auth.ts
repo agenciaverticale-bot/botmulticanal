@@ -17,6 +17,7 @@ function hashPassword(password: string) {
 
 // Função para Verificar a Senha no Login
 function verifyPassword(password: string, storedHash: string) {
+  if (!password || !storedHash) return false;
   const [salt, key] = storedHash.split(':');
   const hashBuffer = crypto.scryptSync(password, salt, 64);
   const keyBuffer = Buffer.from(key, 'hex');
@@ -31,13 +32,19 @@ authRouter.post('/login', async (req, res) => {
       return res.status(500).json({ error: 'Erro: O servidor não conseguiu conectar ao banco de dados.' });
     }
 
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
+    }
+
     // --- CRIAÇÃO AUTOMÁTICA E INVISÍVEL DO SEU ADMIN ---
     // Verifica se a tabela de usuários está completamente vazia
     const allUsers = await db.select().from(users).limit(1);
     if (allUsers.length === 0) {
       console.log('[Auth] Primeiro acesso detectado. Criando conta mestre da Verticale...');
       await db.insert(users).values({
-        openId: crypto.randomUUID(), 
+        openId: crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex'), 
         email: 'contato@agenciaverticale.com.br',
         name: 'Admin Verticale',
         passwordHash: hashPassword('Contato@2026'),
@@ -46,8 +53,6 @@ authRouter.post('/login', async (req, res) => {
       });
     }
     // ---------------------------------------------------
-
-    const { email, password } = req.body;
 
     const user = await db.select().from(users).where(eq(users.email, email)).limit(1);
     
@@ -69,6 +74,6 @@ authRouter.post('/login', async (req, res) => {
     res.json({ token, user: { name: user[0].name, email: user[0].email, role: user[0].role } });
   } catch (error) {
     console.error('[Auth] Erro na rota de login:', error);
-    res.status(500).json({ error: 'Erro interno ao tentar fazer login.' });
+    res.status(500).json({ error: `Erro interno no servidor: ${error.message || String(error)}` });
   }
 });
