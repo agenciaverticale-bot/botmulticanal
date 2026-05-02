@@ -17,14 +17,16 @@ let isBotMuted = false;
 // Função para buscar resposta da Inteligência Artificial (Groq)
 async function getGroqResponse(message: string, userName: string): Promise<string> {
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
+  // Puxa a URL do painel ou usa o padrão da Groq/OpenAI
+  const GROQ_API_URL = process.env.GROQ_API_URL || 'https://api.groq.com/openai/v1';
+  
   if (!GROQ_API_KEY) return `🤖 Olá ${userName}! Recebi sua mensagem: "${message}".`;
   
   try {
     const response = await axios.post(
-      'https://api.groq.com/openai/v1/chat/completions',
+      `${GROQ_API_URL}/chat/completions`,
       {
-        // Usando o modelo LLaMA 3 (muito rápido e inteligente) fornecido pela Groq
-        model: 'llama3-70b-8192', 
+        model: 'openai/gpt-oss-120b', // Modelo que você enviou no snippet
         messages: [
           {
             role: 'system',
@@ -35,7 +37,10 @@ async function getGroqResponse(message: string, userName: string): Promise<strin
             content: message
           }
         ],
-        max_tokens: 300
+        temperature: 1,
+        max_completion_tokens: 8192,
+        top_p: 1,
+        reasoning_effort: "medium"
       },
       { headers: { Authorization: `Bearer ${GROQ_API_KEY}` } }
     );
