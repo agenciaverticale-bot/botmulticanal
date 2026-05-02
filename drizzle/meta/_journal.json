@@ -15,6 +15,13 @@
       "when": 1777646077696,
       "tag": "0001_slim_midnight",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1777730091725,
+      "tag": "0002_colossal_viper",
+      "breakpoints": true
     }
   ]
 }

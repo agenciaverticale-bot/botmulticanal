@@ -11,7 +11,7 @@ Você precisa ter:
 1. ✅ Uma conta no [Render](https://render.com) (crie uma se não tiver)
 2. ✅ Uma conta no [GitHub](https://github.com) (para auto-deploy)
 3. ✅ O repositório do projeto no GitHub
-4. ✅ Supabase configurado (para o bot) e as credenciais prontas
+4. ✅ Banco de dados Neon.tech configurado e a Connection String pronta
 5. ✅ Instância da Evolution API rodando (com banco Neon)
 
 ---
@@ -94,7 +94,7 @@ No Render Dashboard, vá para **"Environment"** e adicione as seguintes variáve
 ```bash
 NODE_ENV=production
 PORT=3000
-DATABASE_URL=postgresql://postgres:Contato@2026@db.uxvntliomktkrojnlbwi.supabase.co:5432/postgres
+DATABASE_URL=postgresql://neondb_owner:SUA_SENHA_AQUI@ep-seu-banco.aws.neon.tech/neondb?sslmode=require
 SUPABASE_URL=https://uxvntliomktkrojnlbwi.supabase.co
 SUPABASE_KEY=sb_publishable_Ivq2WQtgQxh76bhbjWvk7Q_IA9KREHD
 VITE_SUPABASE_URL=https://uxvntliomktkrojnlbwi.supabase.co
@@ -118,9 +118,9 @@ VITE_FRONTEND_FORGE_API_KEY=sua_chave_aqui
 
 ### 3.2 Onde Obter Essas Credenciais
 
-- **DATABASE_URL**: Do Supabase (Settings → Database)
-- **SUPABASE_URL**: Do Supabase (Settings → API)
-- **SUPABASE_KEY**: Do Supabase (Settings → API)
+- **DATABASE_URL**: Do Neon.tech (Dashboard → Connection String)
+- **SUPABASE_URL**: Variável falsa/legado (mantenha como está para o frontend não quebrar)
+- **SUPABASE_KEY**: Variável falsa/legado (mantenha como está)
 - **VITE_SUPABASE_URL**: A mesma URL do Supabase, exposta para o frontend
 - **VITE_SUPABASE_ANON_KEY**: A mesma Key do Supabase, exposta para o frontend
 - **EVOLUTION_API_URL**: URL da sua Evolution API rodando no Render

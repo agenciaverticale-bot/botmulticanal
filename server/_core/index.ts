@@ -11,6 +11,7 @@ import { serveStatic, setupVite } from "./vite";
 import healthRouter from "./health";
 import { instagramRouter } from "../../instagram";
 import { whatsappRouter } from "../../whatsapp";
+import { authRouter } from "../../auth";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -45,6 +46,7 @@ async function startServer() {
   // Rotas do Bot (Instagram e WhatsApp)
   app.use('/api', instagramRouter);
   app.use('/api/whatsapp', whatsappRouter);
+  app.use('/api/auth', authRouter);
 
   // tRPC API
   app.use(

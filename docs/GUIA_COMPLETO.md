@@ -18,28 +18,26 @@ Este guia detalha todos os passos necessários para preparar seu Supabase e conf
 
 ## Setup do Banco de Dados
 
-### Passo 1: Acessar o Supabase
+### Passo 1: Acessar o Neon.tech
 
-1. Vá para [https://supabase.com/dashboard](https://supabase.com/dashboard)
-2. Faça login com sua conta
-3. Selecione seu projeto
+1. Vá para https://neon.tech
+2. Crie um projeto e copie a sua **Connection String**.
+3. Cole essa URL na variável `DATABASE_URL` do seu `.env`.
 
-### Passo 2: Executar Script SQL
+### Passo 2: Criar as Tabelas com Drizzle
 
-1. No menu lateral esquerdo, clique em **"SQL Editor"**
-2. Clique em **"New Query"** (botão verde com "+")
-3. Abra o arquivo: `docs/SETUP_DATABASE.sql`
-4. Copie TODO o conteúdo
-5. Cole na caixa de SQL do Supabase
-6. Clique em **"Run"** (ou pressione Ctrl+Enter)
-7. Você deve ver: **"Success"** em verde
+1. No terminal, rode o comando:
+   ```bash
+   pnpm db:push
+   ```
+2. O Drizzle enviará o schema automaticamente para o banco.
 
 ✅ **Seu banco de dados foi criado com sucesso!**
 
 ### Passo 3: Verificar as Tabelas
 
 1. Clique em **"Table Editor"** no menu lateral
-2. Você deve ver as seguintes tabelas:
+2. (No Neon, em "Tables") Você deve ver as seguintes tabelas:
    - ✅ `users` - Usuários do sistema
    - ✅ `contacts` - Contatos do WhatsApp/Instagram
    - ✅ `conversations` - Conversas
@@ -125,7 +123,6 @@ No seu projeto **Botmulticanal** (seja no seu arquivo `.env` local ou na aba Env
 
 ```env
 EVOLUTION_API_URL=https://minha-api-whatsapp-gof4.onrender.com
-EVOLUTION_API_KEY=sua_chave_global_copiada_do_passo_anterior
 EVOLUTION_API_KEY=269b25b90301acfd3f41cad77b9f48df
 ```
 
@@ -293,15 +290,15 @@ Se encontrar problemas:
 
 1. Verifique se as credenciais de API estão corretas
 2. Verifique se os webhooks estão configurados corretamente
-3. Consulte os logs de notificação no Supabase
+3. Consulte os logs de notificação no banco de dados (Neon)
 4. Verifique a conexão com o banco de dados
 
 ---
 
 ## 📝 Checklist Final
 
-- [ ] Banco de dados criado no Supabase
-- [ ] Tabelas criadas (execute `SETUP_DATABASE.sql`)
+- [ ] Banco de dados criado no Neon.tech
+- [ ] Tabelas criadas (execute `pnpm db:push`)
 - [ ] Dependências instaladas (`pnpm install`)
 - [ ] Servidor iniciado (`pnpm dev`)
 - [ ] Dashboard acessível em `http://localhost:3000`

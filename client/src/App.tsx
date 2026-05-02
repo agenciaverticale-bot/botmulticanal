@@ -5,7 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { useAuth } from "./_core/hooks/useAuth";
-import Home from "./pages/Home";
+import { Login } from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 
@@ -14,9 +14,9 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/" component={isAuthenticated ? Dashboard : Home} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/settings" component={Settings} />
+      <Route path="/" component={isAuthenticated ? Dashboard : Login} />
+      <Route path="/dashboard" component={isAuthenticated ? Dashboard : Login} />
+      <Route path="/settings" component={isAuthenticated ? Settings : Login} />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

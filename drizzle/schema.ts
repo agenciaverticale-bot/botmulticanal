@@ -1,24 +1,35 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, index } from "drizzle-orm/mysql-core";
+import { integer, pgEnum, pgTable, text, timestamp, varchar, boolean, index, serial } from "drizzle-orm/pg-core";
+
+export const roleEnum = pgEnum("role", ["user", "admin"]);
+export const platformEnum = pgEnum("platform", ["whatsapp", "instagram", "both"]);
+export const contactStatusEnum = pgEnum("contact_status", ["active", "inactive", "blocked"]);
+export const conversationStatusEnum = pgEnum("conversation_status", ["open", "closed", "pending"]);
+export const directionEnum = pgEnum("direction", ["inbound", "outbound"]);
+export const messageTypeEnum = pgEnum("message_type", ["text", "image", "video", "audio", "document", "location"]);
+export const messageStatusEnum = pgEnum("message_status", ["sent", "delivered", "read", "failed"]);
+export const notificationTypeEnum = pgEnum("notification_type", ["email", "in_app"]);
+export const campaignStatusEnum = pgEnum("campaign_status", ["draft", "scheduled", "running", "paused", "completed", "failed"]);
 
 /**
  * Core user table backing auth flow.
  * Extend this file with additional tables as your product grows.
  * Columns use camelCase to match both database fields and generated types.
  */
-export const users = mysqlTable("users", {
+export const users = pgTable("users", {
   /**
    * Surrogate primary key. Auto-incremented numeric value managed by the database.
    * Use this for relations between tables.
    */
-  id: int("id").autoincrement().primaryKey(),
+  id: serial("id").primaryKey(),
   /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  passwordHash: varchar("passwordHash", { length: 255 }),
+  role: roleEnum("role").default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
@@ -26,19 +37,19 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 // API Credentials - Armazena tokens e credenciais de APIs externas
-export const apiCredentials = mysqlTable(
+export const apiCredentials = pgTable(
   "api_credentials",
   {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull(),
-    platform: mysqlEnum("platform", ["whatsapp", "instagram"]).notNull(),
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
+    platform: platformEnum("platform").notNull(),
     token: varchar("token", { length: 1024 }).notNull(),
     secretKey: varchar("secretKey", { length: 1024 }),
     phoneNumberId: varchar("phoneNumberId", { length: 255 }),
     businessAccountId: varchar("businessAccountId", { length: 255 }),
     isActive: boolean("isActive").default(true).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },
   (table) => ({
     userIdIdx: index("idx_user_id").on(table.userId),
@@ -49,21 +60,21 @@ export type ApiCredential = typeof apiCredentials.$inferSelect;
 export type InsertApiCredential = typeof apiCredentials.$inferInsert;
 
 // Contacts - Gerencia contatos de diferentes plataformas
-export const contacts = mysqlTable(
+export const contacts = pgTable(
   "contacts",
   {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull(),
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
     externalId: varchar("externalId", { length: 255 }).notNull(),
-    platform: mysqlEnum("platform", ["whatsapp", "instagram"]).notNull(),
+    platform: platformEnum("platform").notNull(),
     name: varchar("name", { length: 255 }),
     phoneNumber: varchar("phoneNumber", { length: 20 }),
     instagramHandle: varchar("instagramHandle", { length: 255 }),
     profilePicture: varchar("profilePicture", { length: 512 }),
     lastInteractionAt: timestamp("lastInteractionAt"),
-    status: mysqlEnum("status", ["active", "inactive", "blocked"]).default("active").notNull(),
+    status: contactStatusEnum("status").default("active").notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },
   (table) => ({
     userIdIdx: index("idx_contacts_user_id").on(table.userId),
@@ -75,20 +86,20 @@ export type Contact = typeof contacts.$inferSelect;
 export type InsertContact = typeof contacts.$inferInsert;
 
 // Conversations - Agrupa mensagens de um contato
-export const conversations = mysqlTable(
+export const conversations = pgTable(
   "conversations",
   {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull(),
-    contactId: int("contactId").notNull(),
-    platform: mysqlEnum("platform", ["whatsapp", "instagram"]).notNull(),
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
+    contactId: integer("contactId").notNull(),
+    platform: platformEnum("platform").notNull(),
     externalConversationId: varchar("externalConversationId", { length: 255 }),
     subject: varchar("subject", { length: 255 }),
-    status: mysqlEnum("status", ["open", "closed", "pending"]).default("open").notNull(),
-    unreadCount: int("unreadCount").default(0).notNull(),
+    status: conversationStatusEnum("status").default("open").notNull(),
+    unreadCount: integer("unreadCount").default(0).notNull(),
     lastMessageAt: timestamp("lastMessageAt"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },
   (table) => ({
     userIdIdx: index("idx_conversations_user_id").on(table.userId),
@@ -101,21 +112,21 @@ export type Conversation = typeof conversations.$inferSelect;
 export type InsertConversation = typeof conversations.$inferInsert;
 
 // Messages - Armazena todas as mensagens
-export const messages = mysqlTable(
+export const messages = pgTable(
   "messages",
   {
-    id: int("id").autoincrement().primaryKey(),
-    conversationId: int("conversationId").notNull(),
-    contactId: int("contactId").notNull(),
-    userId: int("userId").notNull(),
+    id: serial("id").primaryKey(),
+    conversationId: integer("conversationId").notNull(),
+    contactId: integer("contactId").notNull(),
+    userId: integer("userId").notNull(),
     externalMessageId: varchar("externalMessageId", { length: 255 }),
-    platform: mysqlEnum("platform", ["whatsapp", "instagram"]).notNull(),
-    direction: mysqlEnum("direction", ["inbound", "outbound"]).notNull(),
-    messageType: mysqlEnum("messageType", ["text", "image", "video", "audio", "document", "location"]).default("text").notNull(),
+    platform: platformEnum("platform").notNull(),
+    direction: directionEnum("direction").notNull(),
+    messageType: messageTypeEnum("messageType").default("text").notNull(),
     content: text("content"),
     mediaUrl: varchar("mediaUrl", { length: 512 }),
     mediaType: varchar("mediaType", { length: 50 }),
-    status: mysqlEnum("status", ["sent", "delivered", "read", "failed"]).default("sent").notNull(),
+    status: messageStatusEnum("status").default("sent").notNull(),
     senderName: varchar("senderName", { length: 255 }),
     senderPhone: varchar("senderPhone", { length: 20 }),
     senderInstagramHandle: varchar("senderInstagramHandle", { length: 255 }),
@@ -133,19 +144,19 @@ export type Message = typeof messages.$inferSelect;
 export type InsertMessage = typeof messages.$inferInsert;
 
 // Chatbot Rules - Define regras de automação
-export const chatbotRules = mysqlTable(
+export const chatbotRules = pgTable(
   "chatbot_rules",
   {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull(),
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
     name: varchar("name", { length: 255 }).notNull(),
     triggerKeywords: text("triggerKeywords").notNull(),
     responseTemplate: text("responseTemplate").notNull(),
-    platform: mysqlEnum("platform", ["whatsapp", "instagram", "both"]).default("both").notNull(),
-    priority: int("priority").default(0).notNull(),
+    platform: platformEnum("platform").default("both").notNull(),
+    priority: integer("priority").default(0).notNull(),
     isActive: boolean("isActive").default(true).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },
   (table) => ({
     userActiveIdx: index("idx_chatbot_rules_user_active").on(table.userId, table.isActive),
@@ -156,17 +167,17 @@ export type ChatbotRule = typeof chatbotRules.$inferSelect;
 export type InsertChatbotRule = typeof chatbotRules.$inferInsert;
 
 // Notification Settings - Configurações de notificação
-export const notificationSettings = mysqlTable(
+export const notificationSettings = pgTable(
   "notification_settings",
   {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull().unique(),
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull().unique(),
     emailNotificationsEnabled: boolean("emailNotificationsEnabled").default(true).notNull(),
-    unreadMessageThreshold: int("unreadMessageThreshold").default(10).notNull(),
+    unreadMessageThreshold: integer("unreadMessageThreshold").default(10).notNull(),
     notifyOnEveryMessage: boolean("notifyOnEveryMessage").default(false).notNull(),
     notifyOnImportantKeywords: text("notifyOnImportantKeywords"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   }
 );
 
@@ -174,16 +185,16 @@ export type NotificationSetting = typeof notificationSettings.$inferSelect;
 export type InsertNotificationSetting = typeof notificationSettings.$inferInsert;
 
 // Notification Logs - Registra notificações enviadas
-export const notificationLogs = mysqlTable(
+export const notificationLogs = pgTable(
   "notification_logs",
   {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull(),
-    type: mysqlEnum("type", ["email", "in_app"]).notNull(),
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
+    type: notificationTypeEnum("type").notNull(),
     title: varchar("title", { length: 255 }).notNull(),
     content: text("content").notNull(),
-    messageId: int("messageId"),
-    conversationId: int("conversationId"),
+    messageId: integer("messageId"),
+    conversationId: integer("conversationId"),
     sentAt: timestamp("sentAt").defaultNow().notNull(),
   },
   (table) => ({
@@ -193,3 +204,32 @@ export const notificationLogs = mysqlTable(
 
 export type NotificationLog = typeof notificationLogs.$inferSelect;
 export type InsertNotificationLog = typeof notificationLogs.$inferInsert;
+
+// Campaigns - Gerencia os disparos em massa
+export const campaigns = pgTable(
+  "campaigns",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    messageTemplate: text("messageTemplate").notNull(),
+    platform: platformEnum("platform").default("whatsapp").notNull(),
+    status: campaignStatusEnum("status").default("draft").notNull(),
+    targetAudience: text("targetAudience"), // JSON list of rules or contact IDs
+    totalRecipients: integer("totalRecipients").default(0).notNull(),
+    successfulSends: integer("successfulSends").default(0).notNull(),
+    failedSends: integer("failedSends").default(0).notNull(),
+    scheduledAt: timestamp("scheduledAt"),
+    startedAt: timestamp("startedAt"),
+    completedAt: timestamp("completedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("idx_campaigns_user_id").on(table.userId),
+    statusIdx: index("idx_campaigns_status").on(table.status),
+  })
+);
+
+export type Campaign = typeof campaigns.$inferSelect;
+export type InsertCampaign = typeof campaigns.$inferInsert;

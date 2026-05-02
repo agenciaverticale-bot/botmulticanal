@@ -17,13 +17,11 @@ Este é o guia final com todos os passos para colocar sua aplicação online.
 
 ### Passo 1: Criar Tabelas no Supabase
 
-1. Vá para: https://supabase.com/dashboard
-2. Selecione seu projeto `uxvntliomktkrojnlbwi`
-3. Clique em **"SQL Editor"** → **"New Query"**
-4. Abra o arquivo: `docs/SETUP_DATABASE.sql`
-5. Cole TODO o conteúdo
-6. Clique em **"Run"**
-7. Você deve ver: **"Success"** em verde
+1. Como estamos usando Neon e Drizzle ORM, a criação é automática!
+2. Abra o seu terminal na pasta do projeto.
+3. Garanta que a variável `DATABASE_URL` no seu `.env` aponte para o Neon.
+4. Rode o comando: `pnpm db:push`
+5. O Drizzle criará todas as tabelas no seu banco Neon automaticamente em segundos.
 
 ✅ **Banco de dados criado!**
 
@@ -120,7 +118,7 @@ Aguarde a página carregar. Vá para **"Environment"** e adicione as seguintes v
 ```bash
 NODE_ENV=production
 PORT=3000
-DATABASE_URL=postgresql://postgres:Contato@2026@db.uxvntliomktkrojnlbwi.supabase.co:5432/postgres
+DATABASE_URL=postgresql://neondb_owner:SUA_SENHA_AQUI@ep-seu-banco.aws.neon.tech/neondb?sslmode=require
 SUPABASE_URL=https://uxvntliomktkrojnlbwi.supabase.co
 SUPABASE_KEY=sb_publishable_Ivq2WQtgQxh76bhbjWvk7Q_IA9KREHD
 VITE_SUPABASE_URL=https://uxvntliomktkrojnlbwi.supabase.co
@@ -197,8 +195,8 @@ VITE_FRONTEND_FORGE_API_KEY=sua_chave_frontend_forge_api
 
 ## 📝 Checklist Final
 
-- [ ] Banco de dados criado no Supabase
-- [ ] Tabelas criadas (execute `SETUP_DATABASE.sql`)
+- [ ] Banco de dados criado no Neon.tech
+- [ ] Tabelas criadas (execute `pnpm db:push`)
 - [ ] Código feito push para GitHub
 - [ ] Projeto criado no Render
 - [ ] Variáveis de ambiente configuradas
