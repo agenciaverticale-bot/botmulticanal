@@ -1,4 +1,5 @@
 import { integer, pgEnum, pgTable, text, timestamp, varchar, boolean, index, serial } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 export const roleEnum = pgEnum("role", ["user", "admin"]);
 export const platformEnum = pgEnum("platform", ["whatsapp", "instagram", "both"]);
@@ -233,3 +234,39 @@ export const campaigns = pgTable(
 
 export type Campaign = typeof campaigns.$inferSelect;
 export type InsertCampaign = typeof campaigns.$inferInsert;
+
+// ============================================================================
+// RELACIONAMENTOS (Obrigatório para o Dashboard conseguir cruzar dados e exibir)
+// ============================================================================
+
+export const usersRelations = relations(users, ({ many }) => ({
+  contacts: many(contacts),
+  conversations: many(conversations),
+  messages: many(messages),
+}));
+
+export const contactsRelations = relations(contacts, ({ one, many }) => ({
+  user: one(users, { fields: [contacts.userId], references: [users.id] }),
+  conversations: many(conversations),
+  messages: many(messages),
+}));
+
+export const conversationsRelations = relations(conversations, ({ one, many }) => ({
+  user: one(users, { fields: [conversations.userId], references: [users.id] }),
+  contact: one(contacts, { fields: [conversations.contactId], references: [contacts.id] }),
+  messages: many(messages),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  conversation: one(conversations, { fields: [messages.conversationId], references: [conversations.id] }),
+  contact: one(contacts, { fields: [messages.contactId], references: [contacts.id] }),
+  user: one(users, { fields: [messages.userId], references: [users.id] }),
+}));
+
+export const chatbotRulesRelations = relations(chatbotRules, ({ one }) => ({
+  user: one(users, { fields: [chatbotRules.userId], references: [users.id] }),
+}));
+
+export const campaignsRelations = relations(campaigns, ({ one }) => ({
+  user: one(users, { fields: [campaigns.userId], references: [users.id] }),
+}));

@@ -365,8 +365,9 @@ export async function getMessagesByConversation(conversationId: number, limit = 
     .select()
     .from(messages)
     .where(eq(messages.conversationId, conversationId))
-    .orderBy(asc(messages.createdAt))
+    .orderBy(desc(messages.createdAt))
     .limit(limit);
+    .then(res => res.reverse()); // Inverte para manter a ordem cronológica para a IA
 }
 
 export async function updateMessageStatus(messageId: number, status: "sent" | "delivered" | "read" | "failed") {
@@ -388,7 +389,6 @@ export async function getUnreadMessageCount(userId: number) {
 
   const conditions = [
     eq(messages.direction, "inbound"),
-    eq(messages.status, "sent")
   ];
   
   if (!isAdmin) {
