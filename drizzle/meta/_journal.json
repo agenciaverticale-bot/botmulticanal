@@ -1,26 +1,12 @@
 {
   "version": "7",
-  "dialect": "mysql",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "5",
-      "when": 1777644246301,
-      "tag": "0000_short_typhoid_mary",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1777646077696,
-      "tag": "0001_slim_midnight",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1777730091725,
-      "tag": "0002_colossal_viper",
+      "version": "7",
+      "when": 1777733849703,
+      "tag": "0000_fancy_black_knight",
       "breakpoints": true
     }
   ]

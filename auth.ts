@@ -74,6 +74,7 @@ authRouter.post('/login', async (req, res) => {
     res.json({ token, user: { name: user[0].name, email: user[0].email, role: user[0].role } });
   } catch (error) {
     console.error('[Auth] Erro na rota de login:', error);
-    res.status(500).json({ error: `Erro interno no servidor: ${error.message || String(error)}` });
+    const realError = error.cause?.message || error.message || String(error);
+    res.status(500).json({ error: `Erro no Banco de Dados: ${realError}` });
   }
 });
