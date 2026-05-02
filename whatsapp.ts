@@ -4,8 +4,8 @@ import axios from 'axios';
 export const whatsappRouter = Router();
 
 // Use os mesmos nomes de variáveis que você configurou no seu .env
-const EVOLUTION_URL = process.env.EVOLUTION_API_URL;
-const API_KEY = process.env.EVOLUTION_API_KEY;
+const EVOLUTION_URL = process.env.EVOLUTION_API_URL || 'https://minha-api-whatsapp-gof4.onrender.com';
+const API_KEY = process.env.EVOLUTION_API_KEY || '269b25b90301acfd3f41cad77b9f48df'; 
 // Você pode tornar isso dinâmico depois (ex: req.user.id) se tiver múltiplos clientes
 const INSTANCE_NAME = 'bot-verticale'; 
 
@@ -34,4 +34,48 @@ whatsappRouter.get('/qrcode', async (req, res) => {
     console.error('Erro ao buscar QR Code da Evolution API:', error);
     res.status(500).json({ error: 'Falha ao conectar com a API do WhatsApp' });
   }
+});
+
+// POST: Rota do Webhook para receber mensagens do WhatsApp (via Evolution API)
+whatsappRouter.post('/webhook', async (req, res) => {
+  const body = req.body;
+
+  // console.log('💬 Webhook recebido da Evolution API:', JSON.stringify(body, null, 2));
+
+  // A Evolution envia o tipo de evento. Queremos capturar novas mensagens (messages.upsert)
+  if (body.event === 'messages.upsert') {
+    const messageData = body.data;
+    
+    // Ignoramos mensagens enviadas pelo próprio bot/usuário (fromMe: true)
+    if (messageData && messageData.key && !messageData.key.fromMe) {
+      const senderId = messageData.key.remoteJid; // Ex: 5511999999999@s.whatsapp.net
+      
+      // O texto da mensagem pode vir em campos diferentes dependendo do tipo da mensagem
+      const receivedText = messageData.message?.conversation || messageData.message?.extendedTextMessage?.text;
+
+      if (receivedText) {
+        console.log(`💬 Nova mensagem no WhatsApp de ${senderId}: "${receivedText}"`);
+
+        // TODO: Aqui futuramente vai a consulta no seu Supabase para as 'chatbot_rules'
+        
+        // Envia uma resposta automática de volta usando a Evolution API
+        try {
+          await axios.post(
+            `${EVOLUTION_URL}/message/sendText/${INSTANCE_NAME}`,
+            {
+              number: senderId, // Envia de volta para quem mandou
+              text: `🤖 Olá! Recebi sua mensagem: "${receivedText}". Em breve nosso bot usará IA para responder!`
+            },
+            { headers: { apikey: API_KEY } }
+          );
+          console.log(`✅ Resposta enviada com sucesso para ${senderId}`);
+        } catch (error: any) {
+          console.error('❌ Erro ao enviar resposta para o WhatsApp:', error.response?.data || error.message);
+        }
+      }
+    }
+  }
+
+  // Retornar 200 OK rapidamente para a API não tentar reenviar a notificação
+  res.status(200).send('EVENT_RECEIVED');
 });

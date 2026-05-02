@@ -11,7 +11,8 @@ Você precisa ter:
 1. ✅ Uma conta no [Render](https://render.com) (crie uma se não tiver)
 2. ✅ Uma conta no [GitHub](https://github.com) (para auto-deploy)
 3. ✅ O repositório do projeto no GitHub
-4. ✅ Supabase configurado e as credenciais prontas
+4. ✅ Supabase configurado (para o bot) e as credenciais prontas
+5. ✅ Instância da Evolution API rodando (com banco Neon)
 
 ---
 
@@ -72,13 +73,13 @@ git push -u origin main
 
 Preencha os campos:
 
-| Campo | Valor |
-|-------|-------|
-| **Name** | `botmulticanal` |
-| **Environment** | `Docker` |
-| **Region** | `São Paulo (sao)` ou sua região preferida |
-| **Branch** | `main` |
-| **Auto-deploy** | `Yes` |
+| Campo           | Valor                                     |
+| --------------- | ----------------------------------------- |
+| **Name**        | `botmulticanal`                           |
+| **Environment** | `Docker`                                  |
+| **Region**      | `São Paulo (sao)` ou sua região preferida |
+| **Branch**      | `main`                                    |
+| **Auto-deploy** | `Yes`                                     |
 
 ✅ **Projeto criado!**
 
@@ -96,6 +97,11 @@ PORT=3000
 DATABASE_URL=postgresql://postgres:Contato@2026@db.uxvntliomktkrojnlbwi.supabase.co:5432/postgres
 SUPABASE_URL=https://uxvntliomktkrojnlbwi.supabase.co
 SUPABASE_KEY=sb_publishable_Ivq2WQtgQxh76bhbjWvk7Q_IA9KREHD
+
+# Evolution API
+EVOLUTION_API_URL=https://minha-api-whatsapp-gof4.onrender.com
+EVOLUTION_API_KEY=269b25b90301acfd3f41cad77b9f48df
+
 JWT_SECRET=seu_jwt_secret_aqui
 VITE_APP_ID=seu_app_id_aqui
 OAUTH_SERVER_URL=https://api.manus.im
@@ -113,6 +119,8 @@ VITE_FRONTEND_FORGE_API_KEY=sua_chave_aqui
 - **DATABASE_URL**: Do Supabase (Settings → Database)
 - **SUPABASE_URL**: Do Supabase (Settings → API)
 - **SUPABASE_KEY**: Do Supabase (Settings → API)
+- **EVOLUTION_API_URL**: URL da sua Evolution API rodando no Render
+- **EVOLUTION_API_KEY**: Global API Key configurada na Evolution API
 - **JWT_SECRET**: Gere uma chave segura (use `openssl rand -base64 32`)
 - **VITE_APP_ID**: Do seu projeto Manus
 - **OWNER_OPEN_ID**: Do seu perfil Manus
@@ -129,7 +137,7 @@ VITE_FRONTEND_FORGE_API_KEY=sua_chave_aqui
 
 1. No Render Dashboard, clique em **"Deploy"**
 2. Aguarde o build completar (pode levar 5-10 minutos)
-3. Você verá a URL do seu serviço: `https://botmulticanal.onrender.com`
+3. O Render vai gerar uma URL padrão, mas usaremos seu domínio: `https://crm.agenciaverticale.com.br`
 
 ### 4.2 Verificar Status
 
@@ -146,7 +154,7 @@ VITE_FRONTEND_FORGE_API_KEY=sua_chave_aqui
 
 ### 5.1 Acessar a Aplicação
 
-1. Vá para: `https://botmulticanal.onrender.com`
+1. Vá para: `https://crm.agenciaverticale.com.br`
 2. Você deve ver a página de login
 3. Faça login com sua conta Manus
 
@@ -210,13 +218,13 @@ Agora, sempre que você fizer push para a branch `main` no GitHub:
 
 ### 8.1 Usar Domínio Render
 
-Seu domínio padrão é: `https://botmulticanal.onrender.com`
+Seu domínio padrão gerado pelo Render será substituído pelo seu oficial.
 
 ### 8.2 Usar Domínio Customizado
 
 1. Compre um domínio (ex: em Namecheap, GoDaddy, etc)
-2. No Render Dashboard, vá para **"Settings"** → **"Custom Domain"**
-3. Adicione seu domínio
+2. No Render Dashboard do bot, vá para **"Settings"** → **"Custom Domain"**
+3. Adicione seu domínio: `crm.agenciaverticale.com.br`
 4. Siga as instruções para configurar DNS
 
 ✅ **Domínio customizado configurado!**
@@ -227,18 +235,19 @@ Seu domínio padrão é: `https://botmulticanal.onrender.com`
 
 ### 9.1 URL do Webhook
 
-Seu URL de webhook é: `https://botmulticanal.onrender.com/api/webhooks/whatsapp`
+- **WhatsApp:** `https://crm.agenciaverticale.com.br/api/whatsapp/webhook`
+- **Instagram:** `https://crm.agenciaverticale.com.br/api/webhook/instagram`
 
 ### 9.2 Configurar no Evolution API
 
 1. Vá para o painel da Evolution API
-2. Configure o webhook para: `https://botmulticanal.onrender.com/api/webhooks/whatsapp`
+2. Configure o webhook da instância para: `https://crm.agenciaverticale.com.br/api/whatsapp/webhook`
 3. Salve as configurações
 
 ### 9.3 Configurar no Meta Graph API
 
 1. Vá para o Meta for Developers
-2. Configure o webhook para: `https://botmulticanal.onrender.com/api/webhooks/instagram`
+2. Configure o webhook para: `https://crm.agenciaverticale.com.br/api/webhook/instagram`
 3. Salve as configurações
 
 ✅ **Webhooks configurados!**

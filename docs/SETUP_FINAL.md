@@ -68,10 +68,12 @@ git push -u origin main
 ```
 
 **Você será pedido para:**
+
 - **Username**: Seu username do GitHub
 - **Password**: Seu token de acesso (não sua senha)
 
 Para gerar um token:
+
 1. Vá para: https://github.com/settings/tokens
 2. Clique em **"Generate new token"** → **"Generate new token (classic)"**
 3. Dê um nome: `botmulticanal-deploy`
@@ -101,13 +103,13 @@ Para gerar um token:
 
 Preencha os campos:
 
-| Campo | Valor |
-|-------|-------|
-| **Name** | `botmulticanal` |
-| **Environment** | `Docker` |
-| **Region** | `São Paulo (sao)` |
-| **Branch** | `main` |
-| **Auto-deploy** | `Yes` |
+| Campo           | Valor             |
+| --------------- | ----------------- |
+| **Name**        | `botmulticanal`   |
+| **Environment** | `Docker`          |
+| **Region**      | `São Paulo (sao)` |
+| **Branch**      | `main`            |
+| **Auto-deploy** | `Yes`             |
 
 Clique em **"Create Web Service"**
 
@@ -121,6 +123,10 @@ PORT=3000
 DATABASE_URL=postgresql://postgres:Contato@2026@db.uxvntliomktkrojnlbwi.supabase.co:5432/postgres
 SUPABASE_URL=https://uxvntliomktkrojnlbwi.supabase.co
 SUPABASE_KEY=sb_publishable_Ivq2WQtgQxh76bhbjWvk7Q_IA9KREHD
+
+EVOLUTION_API_URL=https://minha-api-whatsapp-gof4.onrender.com
+EVOLUTION_API_KEY=269b25b90301acfd3f41cad77b9f48df
+
 JWT_SECRET=gere_uma_chave_segura_com_openssl_rand_base64_32
 VITE_APP_ID=seu_app_id_do_manus
 OAUTH_SERVER_URL=https://api.manus.im
@@ -137,7 +143,7 @@ VITE_FRONTEND_FORGE_API_KEY=sua_chave_frontend_forge_api
 
 1. Clique em **"Deploy"**
 2. Aguarde o build completar (5-10 minutos)
-3. Você verá a URL: `https://botmulticanal.onrender.com`
+3. Configure o Custom Domain para apontar para `https://crm.agenciaverticale.com.br`
 
 ✅ **Deploy iniciado!**
 
@@ -147,7 +153,7 @@ VITE_FRONTEND_FORGE_API_KEY=sua_chave_frontend_forge_api
 
 ### Passo 1: Acessar a Aplicação
 
-1. Vá para: `https://botmulticanal.onrender.com`
+1. Vá para: `https://crm.agenciaverticale.com.br`
 2. Você deve ver a página de login
 3. Faça login com sua conta Manus
 
@@ -174,13 +180,13 @@ VITE_FRONTEND_FORGE_API_KEY=sua_chave_frontend_forge_api
 ### WhatsApp (Evolution API)
 
 1. Vá para o painel da Evolution API
-2. Configure o webhook para: `https://botmulticanal.onrender.com/api/webhooks/whatsapp`
+2. Configure o webhook apontando para: `https://crm.agenciaverticale.com.br/api/whatsapp/webhook`
 3. Salve as configurações
 
 ### Instagram (Meta Graph API)
 
 1. Vá para o Meta for Developers
-2. Configure o webhook para: `https://botmulticanal.onrender.com/api/webhooks/instagram`
+2. Configure o webhook para: `https://crm.agenciaverticale.com.br/api/webhook/instagram`
 3. Salve as configurações
 
 ✅ **Webhooks configurados!**
@@ -202,9 +208,9 @@ VITE_FRONTEND_FORGE_API_KEY=sua_chave_frontend_forge_api
 
 ## 🎉 Parabéns!
 
-Sua aplicação está rodando online no Render! 
+Sua aplicação está rodando online no Render!
 
-**URL da aplicação**: `https://botmulticanal.onrender.com`
+**URL da aplicação**: `https://crm.agenciaverticale.com.br`
 
 ---
 

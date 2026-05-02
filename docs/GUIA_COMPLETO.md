@@ -111,26 +111,29 @@ Server running on http://localhost:3000/
 
 #### O que você precisa:
 
-- **Token de Acesso**: Obtido da Evolution API
-- **Phone Number ID**: ID do número de telefone no WhatsApp Business
-- **Business Account ID**: ID da conta comercial
+- **URL da API**: A URL da sua Evolution API hospedada no Render
+- **Global API Key**: A chave de autenticação (Token) global da sua Evolution API
 
 #### Como obter:
 
-1. Vá para [https://evolution-api.com](https://evolution-api.com)
-2. Crie uma conta ou faça login
-3. Crie uma instância para seu número de WhatsApp
-4. Copie o **Token de Acesso**
+1. A URL da sua Evolution API já está definida e rodando no Render: `https://minha-api-whatsapp-gof4.onrender.com`
+2. Para descobrir sua Global API Key, acesse o painel do Render da sua **Evolution API**, vá até a aba **Environment** e copie o valor que você colocou na variável `AUTHENTICATION_API_KEY` (ou `GLOBAL_API_KEY`, dependendo de como você nomeou na instalação da Evolution).
 
 #### Como configurar:
 
-1. No dashboard, clique em **"Configurações"**
-2. Vá para aba **"APIs"**
-3. Procure a seção **"WhatsApp (Evolution API)"**
-4. Cole o token no campo **"Token de Acesso"**
-5. Cole o Phone Number ID
-6. Cole o Business Account ID
-7. Clique em **"Salvar Credenciais"**
+No seu projeto **Botmulticanal** (seja no seu arquivo `.env` local ou na aba Environment do projeto no Render), garanta que essas duas variáveis estejam configuradas corretamente:
+
+```env
+EVOLUTION_API_URL=https://minha-api-whatsapp-gof4.onrender.com
+EVOLUTION_API_KEY=sua_chave_global_copiada_do_passo_anterior
+EVOLUTION_API_KEY=269b25b90301acfd3f41cad77b9f48df
+```
+
+Com isso feito:
+
+1. O seu código em `whatsapp.ts` já está preparado para usar essas variáveis automaticamente.
+2. Acesse a tela de **WhatsApp** do seu dashboard.
+3. Clique em **Gerar QR Code**. O sistema criará a instância automaticamente e devolverá o código na tela para você escanear com o seu celular.
 
 ✅ **WhatsApp configurado!**
 
@@ -172,12 +175,12 @@ Server running on http://localhost:3000/
 
 ### Exemplo 1: Saudação Automática
 
-| Campo | Valor |
-|-------|-------|
-| **Nome da Regra** | Saudação Automática |
-| **Palavras-chave** | olá, oi, tudo bem, e aí |
+| Campo                   | Valor                                                         |
+| ----------------------- | ------------------------------------------------------------- |
+| **Nome da Regra**       | Saudação Automática                                           |
+| **Palavras-chave**      | olá, oi, tudo bem, e aí                                       |
 | **Resposta Automática** | Olá {contactName}! 👋 Bem-vindo! Como posso ajudar você hoje? |
-| **Plataforma** | both (WhatsApp + Instagram) |
+| **Plataforma**          | both (WhatsApp + Instagram)                                   |
 
 **Como criar:**
 
@@ -187,21 +190,21 @@ Server running on http://localhost:3000/
 
 ### Exemplo 2: Resposta para Dúvidas
 
-| Campo | Valor |
-|-------|-------|
-| **Nome da Regra** | Resposta Dúvidas |
-| **Palavras-chave** | dúvida, dúvidas, pergunta, como funciona |
+| Campo                   | Valor                                                                                                                                                    |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Nome da Regra**       | Resposta Dúvidas                                                                                                                                         |
+| **Palavras-chave**      | dúvida, dúvidas, pergunta, como funciona                                                                                                                 |
 | **Resposta Automática** | Ótima pergunta, {contactName}! Você pode encontrar mais informações em nosso site ou falar com um atendente. Deixe seu e-mail que entraremos em contato! |
-| **Plataforma** | both |
+| **Plataforma**          | both                                                                                                                                                     |
 
 ### Exemplo 3: Resposta para Horário
 
-| Campo | Valor |
-|-------|-------|
-| **Nome da Regra** | Informar Horário |
-| **Palavras-chave** | horário, aberto, fecha, funciona |
+| Campo                   | Valor                                                                                              |
+| ----------------------- | -------------------------------------------------------------------------------------------------- |
+| **Nome da Regra**       | Informar Horário                                                                                   |
+| **Palavras-chave**      | horário, aberto, fecha, funciona                                                                   |
 | **Resposta Automática** | Estamos abertos de segunda a sexta, das 9h às 18h. Aos sábados, das 9h às 13h. Domingo fechado. 🕐 |
-| **Plataforma** | both |
+| **Plataforma**          | both                                                                                               |
 
 ### Variáveis Disponíveis
 
@@ -277,8 +280,8 @@ Você pode usar as seguintes variáveis nas respostas automáticas:
 
 ## 🎯 Próximos Passos
 
-1. **Integrar Webhook do WhatsApp**: Configure a URL do webhook na Evolution API
-2. **Integrar Webhook do Instagram**: Configure a URL do webhook no Meta for Developers
+1. **Integrar Webhook do WhatsApp**: Configure a URL do webhook na Evolution API apontando para `https://crm.agenciaverticale.com.br/api/whatsapp/webhook`
+2. **Integrar Webhook do Instagram**: Configure a URL do webhook no Meta for Developers apontando para `https://crm.agenciaverticale.com.br/api/webhook/instagram`
 3. **Treinar o Chatbot**: Crie mais regras baseadas em suas necessidades
 4. **Monitorar Métricas**: Acompanhe o desempenho no dashboard
 
