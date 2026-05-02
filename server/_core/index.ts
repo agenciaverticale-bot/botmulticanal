@@ -12,6 +12,7 @@ import healthRouter from "./health";
 import { instagramRouter } from "../../instagram";
 import { whatsappRouter } from "../../whatsapp";
 import { authRouter } from "../../auth";
+import axios from "axios";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -72,6 +73,13 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
+
+    // PING AUTOMÁTICO: Evita que a Evolution API "durma" no Render gratuito
+    // Faz uma requisição silenciosa a cada 10 minutos (600.000 ms)
+    const EVOLUTION_URL = process.env.EVOLUTION_API_URL || 'https://minha-api-whatsapp-gof4.onrender.com';
+    setInterval(() => {
+      axios.get(EVOLUTION_URL).catch(() => {});
+    }, 10 * 60 * 1000);
   });
 }
 
