@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import axios from 'axios';
-import { getOrCreateContact, getOrCreateConversation, saveMessage, updateConversationUnreadCount, getDb } from './server/db';
+import { getOrCreateContact, getOrCreateConversation, saveMessage, updateConversationUnreadCount, getDb, getMessagesByConversation } from './server/db';
 import { checkChatbotRules, processTemplate, validateResponse } from './server/services/chatbot';
 import { users } from './drizzle/schema';
 import { eq } from 'drizzle-orm';
@@ -58,7 +58,7 @@ NOTA: Todos os pacotes possuem 5% de desconto para pagamento à vista via PIX. U
 `;
 
 // Função para buscar resposta da Inteligência Artificial (Groq)
-async function getGroqResponse(message: string, firstName: string): Promise<string> {
+async function getGroqResponse(message: string, firstName: string, historyText: string): Promise<string> {
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
   // Puxa a URL do painel ou usa o padrão da Groq/OpenAI
   const GROQ_API_URL = process.env.GROQ_API_URL || 'https://api.groq.com/openai/v1';
@@ -73,19 +73,23 @@ async function getGroqResponse(message: string, firstName: string): Promise<stri
         messages: [
           {
             role: 'system',
-            content: `Você é o estrategista digital e representante oficial da Agência Verticale. O nome do lead com quem você conversa é ${firstName}.
+            content: `Você é o Sender, consultor virtual da Agência Verticale. O nome do lead com quem você conversa é ${firstName}.
+
+HISTÓRICO RECENTE DA CONVERSA:
+${historyText}
 
 BASE DE CONHECIMENTO (Use estas informações para responder as dúvidas do cliente):
 ${KNOWLEDGE_BASE}
 
 DIRETRIZES DE COMPORTAMENTO, PERSUASÃO E VENDAS:
-1. TONALIDADE 100% HUMANA: Escreva de forma casual, fluida e orgânica. Você é um humano no WhatsApp. NÃO USE EMOJIS em hipótese alguma. Não use listas, tópicos ou asteriscos.
-2. SEJA CONCISO E DIRETO: Sem ser rude ou "seco", limite suas respostas a no máximo 2 frases curtas por bloco. Vá direto ao ponto.
-3. MENSAGENS DIVIDIDAS: Se precisar explicar mais do que duas frases, DIVIDA sua resposta usando a tag [QUEBRA]. Isso simula a digitação real pausada.
-4. LITERALIDADE NOS SERVIÇOS: Quando perguntarem sobre preços, pacotes, hospedagem ou contrato, DÊ A INFORMAÇÃO EXATA E COMPLETA da base de conhecimento. Sempre mencione as condições (PIX 5% e parcelamento) sem resumir demais essa parte vital.
-5. VALOR ANTECIPADO E DIAGNÓSTICO: Antes de empurrar uma venda, ofereça o "Diagnóstico de Saúde Digital gratuito" sobre o site do cliente. Use a experiência do Thiago (nota 10, certificações) como prova social sutil quando houver brecha.
-6. FECHAMENTO: O seu objetivo final é guiar o cliente amigavelmente para agendar a reunião: https://calendar.app.google/vvM9tMBzJGrCSnuZ7
-9. Foco Absoluto: Responda APENAS sobre a Verticale e marketing digital. Negue educadamente outros assuntos.
+1. PRIMEIRO CONTATO E TRATAMENTO: Analise o HISTÓRICO RECENTE. Se houver apenas UMA mensagem do cliente no histórico, a sua PRIMEIRA E ÚNICA resposta DEVE ser: se apresentar como Sender e PERGUNTAR se o cliente prefere ser chamado de "Senhor(a)" ou "você". (Exemplo: "Olá Nome! Sou o Sender, consultor virtual da Verticale. [QUEBRA] Como você prefere ser chamado: Senhor(a) ou você?"). Não ofereça serviços antes de perguntar isso. Se o histórico mostrar que ele já respondeu essa preferência, adote o tom escolhido a partir de agora.
+2. TONALIDADE 100% HUMANA: Escreva de forma casual, fluida e orgânica. Você é um humano no WhatsApp. NÃO USE EMOJIS em hipótese alguma. Não use listas, tópicos ou asteriscos.
+3. SEJA CONCISO E DIRETO: Sem ser rude ou "seco", limite suas respostas a no máximo 2 frases curtas por bloco. Vá direto ao ponto.
+4. MENSAGENS DIVIDIDAS: Se precisar explicar mais do que duas frases, DIVIDA sua resposta usando a tag [QUEBRA]. Isso simula a digitação real pausada.
+5. LITERALIDADE NOS SERVIÇOS: Quando perguntarem sobre preços, pacotes, hospedagem ou contrato, DÊ A INFORMAÇÃO EXATA E COMPLETA da base de conhecimento. Sempre mencione as condições (PIX 5% e parcelamento) sem resumir demais.
+6. VALOR ANTECIPADO E DIAGNÓSTICO: Antes de empurrar uma venda, ofereça o "Diagnóstico de Saúde Digital gratuito" sobre o site do cliente. Use a experiência do Thiago como prova social sutil quando houver brecha.
+7. FECHAMENTO: O seu objetivo final é guiar o cliente amigavelmente para agendar a reunião: https://calendar.app.google/vvM9tMBzJGrCSnuZ7
+8. FOCO ABSOLUTO: Responda APENAS sobre a Verticale e marketing digital. Negue educadamente outros assuntos.
           },
           {
             role: 'user',
@@ -214,6 +218,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
         let contactId: number | undefined;
         let conversationId: number | undefined;
         let userId = 1; // Fallback
+        let historyText = ""; 
         
         // 1. SALVA A MENSAGEM NO BANCO DE DADOS (CRM)
         console.log(`[CRM] Salvando contato e mensagem no banco...`);
@@ -244,6 +249,10 @@ whatsappRouter.post('/webhook', async (req, res) => {
 
           await updateConversationUnreadCount(conversationId, (conversation.unreadCount || 0) + 1);
           console.log(`[CRM] Mensagem salva com sucesso! (Conversation: ${conversationId})`);
+          
+          // Busca o histórico formatado para a IA
+          const msgs = await getMessagesByConversation(conversationId, 8); // Pega as últimas 8 mensagens
+          historyText = msgs.map((m: any) => `[${m.direction === 'inbound' ? 'Cliente' : 'Sender'}]: ${m.content}`).join('\n');
         } catch (dbError) {
           console.error('❌ Erro ao salvar mensagem no CRM:', dbError);
         }
@@ -262,7 +271,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
             });
           } else {
             // Resposta padrão (Caso não encontre nenhuma regra correspondente)
-            replyText = await getGroqResponse(receivedText, firstName);
+            replyText = await getGroqResponse(receivedText, firstName, historyText);
           }
 
           // 3. SEPARA AS MENSAGENS PELA TAG [QUEBRA] E ENVIA UMA POR UMA
