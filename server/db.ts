@@ -366,7 +366,7 @@ export async function getMessagesByConversation(conversationId: number, limit = 
     .from(messages)
     .where(eq(messages.conversationId, conversationId))
     .orderBy(desc(messages.createdAt))
-    .limit(limit);
+    .limit(limit)
     .then(res => res.reverse()); // Inverte para manter a ordem cronológica para a IA
 }
 
