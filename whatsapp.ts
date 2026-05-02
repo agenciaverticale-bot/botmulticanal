@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import axios from 'axios';
 import { getOrCreateContact, getOrCreateConversation, saveMessage, updateConversationUnreadCount } from './server/db';
+import { checkChatbotRules, processTemplate, validateResponse } from './server/services/chatbot';
 
 export const whatsappRouter = Router();
 
@@ -113,23 +114,83 @@ whatsappRouter.post('/webhook', async (req, res) => {
       const receivedText = messageData.message?.conversation || messageData.message?.extendedTextMessage?.text;
 
       if (receivedText) {
-        console.log(`💬 Nova mensagem no WhatsApp de ${senderId}: "${receivedText}"`);
+        const phoneNumber = senderId.split('@')[0];
+        const pushName = messageData.pushName || phoneNumber;
 
-        // TODO: Aqui futuramente vai a consulta no seu Supabase para as 'chatbot_rules'
+        console.log(`💬 Nova mensagem de ${pushName} (${phoneNumber}): "${receivedText}"`);
+
+        let contactId: number | undefined;
+        let conversationId: number | undefined;
+        const userId = 1; // ID do seu usuário administrador
         
-        // Envia uma resposta automática de volta usando a Evolution API
+        // 1. SALVA A MENSAGEM NO BANCO DE DADOS (CRM)
         try {
+          const contact = await getOrCreateContact(userId, phoneNumber, "whatsapp", { name: pushName, phoneNumber });
+          const conversation = await getOrCreateConversation(userId, contact.id, "whatsapp");
+          
+          contactId = contact.id;
+          conversationId = conversation.id;
+
+          await saveMessage({
+            conversationId,
+            contactId,
+            userId,
+            externalMessageId: messageData.key.id,
+            platform: "whatsapp",
+            direction: "inbound",
+            messageType: "text",
+            content: receivedText,
+            status: "delivered",
+          });
+
+          await updateConversationUnreadCount(conversationId, (conversation.unreadCount || 0) + 1);
+        } catch (dbError) {
+          console.error('❌ Erro ao salvar mensagem no CRM:', dbError);
+        }
+
+        // 2. BUSCA REGRAS DO CHATBOT NO BANCO E RESPONDE
+        try {
+          let replyText = "";
+          
+          // Verifica se a mensagem bate com alguma palavra-chave cadastrada no painel
+          const chatbotMatch = await checkChatbotRules(userId, receivedText, "whatsapp");
+
+          if (chatbotMatch && validateResponse(chatbotMatch.response)) {
+            replyText = processTemplate(chatbotMatch.response, {
+              contactName: pushName,
+              platform: "whatsapp",
+            });
+          } else {
+            // Resposta padrão (Caso não encontre nenhuma regra correspondente)
+            replyText = `🤖 Olá ${pushName}! Recebi sua mensagem: "${receivedText}".`;
+          }
+
+          // Envia a resposta pelo WhatsApp
           await axios.post(
             `${EVOLUTION_URL}/message/sendText/${INSTANCE_NAME}`,
             {
-              number: senderId, // Envia de volta para quem mandou
-              text: `🤖 Olá! Recebi sua mensagem: "${receivedText}". Em breve nosso bot usará IA para responder!`
+              number: senderId,
+              text: replyText
             },
             { headers: { apikey: API_KEY } }
           );
-          console.log(`✅ Resposta enviada com sucesso para ${senderId}`);
+          
+          // 3. SALVA A RESPOSTA DO BOT NO CRM PARA VOCÊ LER
+          if (contactId && conversationId) {
+            await saveMessage({
+              conversationId, 
+              contactId, 
+              userId, 
+              platform: "whatsapp",
+              direction: "outbound", 
+              messageType: "text", 
+              content: replyText, 
+              status: "sent", 
+              automatedResponse: true,
+            });
+          }
         } catch (error: any) {
-          console.error('❌ Erro ao enviar resposta para o WhatsApp:', error.response?.data || error.message);
+          console.error('❌ Erro ao processar resposta automática:', error.response?.data || error.message);
         }
       }
     }
