@@ -14,6 +14,38 @@ const INSTANCE_NAME = 'bot-verticale';
 // Variável em memória para controlar se o bot está silenciado
 let isBotMuted = false;
 
+// Função para buscar resposta da Inteligência Artificial (Groq)
+async function getGroqResponse(message: string, userName: string): Promise<string> {
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
+  if (!GROQ_API_KEY) return `🤖 Olá ${userName}! Recebi sua mensagem: "${message}".`;
+  
+  try {
+    const response = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        // Usando o modelo LLaMA 3 (muito rápido e inteligente) fornecido pela Groq
+        model: 'llama3-70b-8192', 
+        messages: [
+          {
+            role: 'system',
+            content: `Você é o assistente virtual da Agência Verticale. Seja extremamente prestativo, educado e forneça respostas curtas, amigáveis e objetivas (estamos no WhatsApp). O nome da pessoa com quem você está conversando é ${userName}.`
+          },
+          {
+            role: 'user',
+            content: message
+          }
+        ],
+        max_tokens: 300
+      },
+      { headers: { Authorization: `Bearer ${GROQ_API_KEY}` } }
+    );
+    return response.data.choices[0].message.content;
+  } catch (error: any) {
+    console.error('❌ Erro na IA da Groq:', error?.response?.data || error.message);
+    return `🤖 Olá ${userName}! Recebi sua mensagem, mas meu cérebro (IA) está descansando agora. Em breve um humano te responderá!`;
+  }
+}
+
 whatsappRouter.get('/mute', (req, res) => {
   res.json({ isMuted: isBotMuted });
 });
@@ -162,7 +194,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
             });
           } else {
             // Resposta padrão (Caso não encontre nenhuma regra correspondente)
-            replyText = `🤖 Olá ${pushName}! Recebi sua mensagem: "${receivedText}".`;
+            replyText = await getGroqResponse(receivedText, pushName);
           }
 
           // Envia a resposta pelo WhatsApp
