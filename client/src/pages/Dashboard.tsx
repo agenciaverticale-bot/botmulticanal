@@ -214,6 +214,7 @@ function MetricsView({ stats }: { stats: any }) {
 function CRMView() {
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const contactsQuery = trpc.messages.getContacts.useQuery(undefined, { refetchInterval: 5000 });
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -230,27 +231,57 @@ function CRMView() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-10 h-[80vh] flex flex-col items-center justify-center">
-      <div className="max-w-md w-full text-center">
-        <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Users className="w-10 h-10" />
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-[calc(100vh-6rem)]">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">CRM de Contatos</h2>
+          <p className="text-slate-500">Gerencie seus clientes e leads capturados</p>
         </div>
-        <h2 className="text-3xl font-bold text-slate-800 mb-3">Importar Leads</h2>
-        <p className="text-slate-500 mb-8 text-lg">
-          Faça o upload da sua planilha (Excel ou CSV) para adicionar contatos em massa ao seu funil e iniciar automações.
-        </p>
-        
-        <label className="cursor-pointer relative block w-full border-2 border-dashed border-blue-300 rounded-xl p-8 hover:bg-blue-50 transition-colors">
-          <input type="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" className="hidden" onChange={handleFileUpload} disabled={loading} />
-          <span className="text-blue-600 font-semibold text-lg">{loading ? "Processando planilha..." : "Clique para selecionar sua planilha"}</span>
-          <p className="text-sm text-slate-400 mt-2">Formatos aceitos: .CSV, .XLSX</p>
+        <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm whitespace-nowrap">
+          {loading ? "Importando..." : "Importar Planilha (CSV/Excel)"}
+          <input type="file" accept=".csv, .xlsx" className="hidden" onChange={handleFileUpload} disabled={loading} />
         </label>
-        
-        {status && (
-          <div className={`mt-6 p-4 rounded-lg font-medium text-sm ${status.includes("Sucesso") ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"}`}>
-            {status}
-          </div>
-        )}
+      </div>
+      
+      {status && (
+        <div className={`mb-6 p-4 rounded-lg font-medium text-sm ${status.includes("Sucesso") ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"}`}>
+          {status}
+        </div>
+      )}
+
+      <div className="flex-1 overflow-auto border border-slate-100 rounded-xl">
+        <table className="w-full text-left border-collapse min-w-[600px]">
+          <thead className="bg-slate-50 sticky top-0 z-10">
+            <tr className="text-slate-500 text-sm border-b border-slate-200">
+              <th className="p-4 font-semibold">Nome</th>
+              <th className="p-4 font-semibold">Telefone / ID</th>
+              <th className="p-4 font-semibold">Origem</th>
+              <th className="p-4 font-semibold">Data de Cadastro</th>
+            </tr>
+          </thead>
+          <tbody>
+            {contactsQuery.isLoading && (
+              <tr><td colSpan={4} className="p-8 text-center text-slate-500">Buscando contatos...</td></tr>
+            )}
+            {contactsQuery.data?.map((contact: any) => (
+              <tr key={contact.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td className="p-4 font-medium text-slate-800">{contact.name || "Desconhecido"}</td>
+                <td className="p-4 text-slate-600">{contact.phoneNumber || contact.externalId}</td>
+                <td className="p-4">
+                  <span className={`px-2 py-1 rounded text-xs font-semibold uppercase ${contact.platform === 'whatsapp' ? 'bg-green-100 text-green-700' : 'bg-pink-100 text-pink-700'}`}>
+                    {contact.platform}
+                  </span>
+                </td>
+                <td className="p-4 text-slate-500 text-sm">
+                  {new Date(contact.createdAt).toLocaleDateString("pt-BR", { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </td>
+              </tr>
+            ))}
+            {contactsQuery.data?.length === 0 && (
+              <tr><td colSpan={4} className="p-8 text-center text-slate-500">Nenhum contato encontrado no banco de dados.</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
