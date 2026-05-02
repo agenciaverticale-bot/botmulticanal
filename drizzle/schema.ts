@@ -10,6 +10,7 @@ export const messageTypeEnum = pgEnum("message_type", ["text", "image", "video",
 export const messageStatusEnum = pgEnum("message_status", ["sent", "delivered", "read", "failed"]);
 export const notificationTypeEnum = pgEnum("notification_type", ["email", "in_app"]);
 export const campaignStatusEnum = pgEnum("campaign_status", ["draft", "scheduled", "running", "paused", "completed", "failed"]);
+export const ticketStatusEnum = pgEnum("ticket_status", ["open", "in_progress", "resolved", "closed"]);
 
 /**
  * Core user table backing auth flow.
@@ -235,6 +236,22 @@ export const campaigns = pgTable(
 export type Campaign = typeof campaigns.$inferSelect;
 export type InsertCampaign = typeof campaigns.$inferInsert;
 
+// Support Tickets - Chamados de Suporte
+export const supportTickets = pgTable("support_tickets", {
+  id: serial("id").primaryKey(),
+  ticketCode: varchar("ticketCode", { length: 50 }).notNull().unique(),
+  contactId: integer("contactId").notNull(),
+  userId: integer("userId").notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  status: ticketStatusEnum("status").default("open").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type SupportTicket = typeof supportTickets.$inferSelect;
+export type InsertSupportTicket = typeof supportTickets.$inferInsert;
+
 // ============================================================================
 // RELACIONAMENTOS (Obrigatório para o Dashboard conseguir cruzar dados e exibir)
 // ============================================================================
@@ -249,6 +266,7 @@ export const contactsRelations = relations(contacts, ({ one, many }) => ({
   user: one(users, { fields: [contacts.userId], references: [users.id] }),
   conversations: many(conversations),
   messages: many(messages),
+  tickets: many(supportTickets),
 }));
 
 export const conversationsRelations = relations(conversations, ({ one, many }) => ({
@@ -269,4 +287,9 @@ export const chatbotRulesRelations = relations(chatbotRules, ({ one }) => ({
 
 export const campaignsRelations = relations(campaigns, ({ one }) => ({
   user: one(users, { fields: [campaigns.userId], references: [users.id] }),
+}));
+
+export const supportTicketsRelations = relations(supportTickets, ({ one }) => ({
+  contact: one(contacts, { fields: [supportTickets.contactId], references: [contacts.id] }),
+  user: one(users, { fields: [supportTickets.userId], references: [users.id] }),
 }));

@@ -11,6 +11,7 @@ import {
   chatbotRules,
   notificationSettings,
   notificationLogs,
+  supportTickets,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -527,4 +528,19 @@ export async function getNotificationLogs(userId: number, limit = 20) {
     .where(eq(notificationLogs.userId, userId))
     .orderBy(desc(notificationLogs.sentAt))
     .limit(limit);
+}
+
+// ============================================================================
+// CHAMADOS (TICKETS)
+// ============================================================================
+export async function createSupportTicket(data: { userId: number; contactId: number; subject: string; description: string }) {
+  const db = await getDb();
+  if (!db) return;
+  const ticketCode = `TKT-${Math.floor(1000 + Math.random() * 9000)}-${Date.now().toString().slice(-4)}`;
+  await db.insert(supportTickets).values({
+    ...data,
+    ticketCode,
+    status: 'open'
+  });
+  return ticketCode;
 }

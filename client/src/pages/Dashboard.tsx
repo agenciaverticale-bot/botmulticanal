@@ -16,6 +16,7 @@ import ConversationList from "@/components/ConversationList";
 import ConversationViewer from "@/components/ConversationViewer";
 import { WhatsAppConfig } from "@/components/WhatsAppConfig";
 import { BroadcastForm } from "@/components/BroadcastForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -34,7 +35,7 @@ export default function Dashboard() {
       case "funnel":
         return <FunnelView />;
       case "broadcast":
-        return <div className="max-w-4xl mx-auto"><BroadcastForm /></div>;
+        return <BroadcastForm />;
       case "settings":
         return <div className="max-w-4xl mx-auto"><WhatsAppConfig /></div>;
       case "metrics":
@@ -214,7 +215,15 @@ function MetricsView({ stats }: { stats: any }) {
 function CRMView() {
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<any>(null);
+  const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const contactsQuery = trpc.messages.getContacts.useQuery(undefined, { refetchInterval: 5000 });
+  const importContactsMutation = trpc.messages.importContacts.useMutation();
+  
+  const contactTicketsQuery = trpc.messages.getContactTickets.useQuery(
+    { contactId: selectedContact?.id || 0 },
+    { enabled: !!selectedContact }
+  );
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -223,11 +232,64 @@ function CRMView() {
     setLoading(true);
     setStatus("Lendo arquivo e sincronizando com o banco de dados...");
     
-    // Simula o tempo de processamento de um CSV/XLSX
-    setTimeout(() => {
-      setStatus(`✅ Sucesso! ${Math.floor(Math.random() * 150) + 15} leads foram importados e higienizados. Eles já estão disponíveis para campanhas.`);
-      setLoading(false);
-    }, 2500);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        // Divide o arquivo em linhas e ignora vazias
+        const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+        if (lines.length < 2) throw new Error("O arquivo parece estar vazio ou sem contatos.");
+        
+        const contactsToImport = [];
+        // Pula o cabeçalho (i = 1)
+        for (let i = 1; i < lines.length; i++) {
+          const columns = lines[i].split(',');
+          if (columns.length >= 3) {
+            // Coluna 0: Nome, Coluna 1: Sobrenome (Removemos aspas se houver)
+            const firstName = columns[0].replace(/"/g, '') || '';
+            const lastName = columns[1].replace(/"/g, '') || '';
+            const name = `${firstName} ${lastName}`.trim();
+            
+            // Coluna 2: WhatsApp (Removemos tudo que não for dígito como espaços, + e -)
+            let phone = columns[2].replace(/\D/g, ''); 
+            
+            if (phone.length >= 8) {
+              // Se não tiver código do país e for um número padrão brasileiro (DDD + Numero), coloca o 55
+              if (!phone.startsWith('55') && phone.length <= 11) {
+                phone = `55${phone}`;
+              }
+              contactsToImport.push({
+                name: name || "Desconhecido",
+                phoneNumber: phone,
+                platform: 'whatsapp' as const,
+                externalId: `${phone}@s.whatsapp.net` // Padrão que o WhatsApp usa
+              });
+            }
+          }
+        }
+        
+        if (contactsToImport.length === 0) {
+          throw new Error("Nenhum número de WhatsApp válido foi encontrado na coluna C.");
+        }
+
+        const result = await importContactsMutation.mutateAsync({ contacts: contactsToImport });
+        
+        setStatus(`✅ Sucesso! ${result.imported} leads foram importados e higienizados. Eles já estão disponíveis para campanhas.`);
+        contactsQuery.refetch(); // Recarrega a tabela na hora
+      } catch (err: any) {
+        setStatus(`❌ Erro ao processar o arquivo: ${err.message}`);
+      } finally {
+        setLoading(false);
+        if (e.target) e.target.value = ''; // Reseta o campo para poder subir outro depois
+      }
+    };
+    
+    reader.readAsText(file, 'UTF-8');
+  };
+  
+  const handleViewTickets = (contact: any) => {
+    setSelectedContact(contact);
+    setIsTicketDialogOpen(true);
   };
 
   return (
@@ -253,36 +315,84 @@ function CRMView() {
         <table className="w-full text-left border-collapse min-w-[600px]">
           <thead className="bg-slate-50 sticky top-0 z-10">
             <tr className="text-slate-500 text-sm border-b border-slate-200">
+              <th className="p-4 font-semibold">Código</th>
               <th className="p-4 font-semibold">Nome</th>
               <th className="p-4 font-semibold">Telefone / ID</th>
-              <th className="p-4 font-semibold">Origem</th>
+              <th className="p-4 font-semibold text-center">Interações</th>
+              <th className="p-4 font-semibold text-center">Chamados</th>
               <th className="p-4 font-semibold">Data de Cadastro</th>
+              <th className="p-4 font-semibold">Ações</th>
             </tr>
           </thead>
           <tbody>
             {contactsQuery.isLoading && (
-              <tr><td colSpan={4} className="p-8 text-center text-slate-500">Buscando contatos...</td></tr>
+              <tr><td colSpan={7} className="p-8 text-center text-slate-500">Buscando contatos...</td></tr>
             )}
             {contactsQuery.data?.map((contact: any) => (
               <tr key={contact.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td className="p-4 font-medium text-slate-500 text-sm">{contact.customerCode}</td>
                 <td className="p-4 font-medium text-slate-800">{contact.name || "Desconhecido"}</td>
                 <td className="p-4 text-slate-600">{contact.phoneNumber || contact.externalId}</td>
-                <td className="p-4">
-                  <span className={`px-2 py-1 rounded text-xs font-semibold uppercase ${contact.platform === 'whatsapp' ? 'bg-green-100 text-green-700' : 'bg-pink-100 text-pink-700'}`}>
-                    {contact.platform}
-                  </span>
+                <td className="p-4 text-slate-600 text-center font-medium">{contact.interactionsCount || 1}</td>
+                <td className="p-4 text-center">
+                  {contact.ticketCount > 0 ? (
+                    <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-xs font-bold">
+                      {contact.ticketCount}
+                    </span>
+                  ) : <span className="text-slate-400">0</span>}
                 </td>
                 <td className="p-4 text-slate-500 text-sm">
                   {new Date(contact.createdAt).toLocaleDateString("pt-BR", { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </td>
+                <td className="p-4">
+                  <button onClick={() => handleViewTickets(contact)} className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors">
+                    Ver Chamados
+                  </button>
+                </td>
               </tr>
             ))}
             {contactsQuery.data?.length === 0 && (
-              <tr><td colSpan={4} className="p-8 text-center text-slate-500">Nenhum contato encontrado no banco de dados.</td></tr>
+              <tr><td colSpan={7} className="p-8 text-center text-slate-500">Nenhum contato encontrado no banco de dados.</td></tr>
             )}
           </tbody>
         </table>
       </div>
+
+      <Dialog open={isTicketDialogOpen} onOpenChange={setIsTicketDialogOpen}>
+        <DialogContent className="max-w-2xl bg-white">
+          <DialogHeader>
+            <DialogTitle>Chamados de Suporte - {selectedContact?.name}</DialogTitle>
+            <DialogDescription>
+              Histórico de solicitações de suporte e problemas técnicos relatados.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 max-h-[400px] overflow-y-auto mt-4 pr-2">
+            {contactTicketsQuery.isLoading ? (
+              <p className="text-slate-500 text-center py-4">Buscando chamados...</p>
+            ) : contactTicketsQuery.data?.length === 0 ? (
+              <p className="text-slate-500 text-center py-4">Nenhum chamado aberto para este cliente.</p>
+            ) : (
+              contactTicketsQuery.data?.map((ticket: any) => (
+                <div key={ticket.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="font-bold text-slate-800">{ticket.ticketCode}</span>
+                    <span className={`text-xs px-2 py-1 rounded uppercase font-semibold ${ticket.status === 'open' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                      {ticket.status}
+                    </span>
+                  </div>
+                  <h4 className="font-semibold text-blue-700 mb-2">{ticket.subject}</h4>
+                  <p className="text-sm text-slate-600 whitespace-pre-wrap text-xs bg-white p-3 rounded border border-slate-100 h-24 overflow-y-auto">
+                    {ticket.description}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-3 font-medium">
+                    Aberto em: {new Date(ticket.createdAt).toLocaleString('pt-BR')}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

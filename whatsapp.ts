@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import axios from 'axios';
-import { getOrCreateContact, getOrCreateConversation, saveMessage, updateConversationUnreadCount, getDb, getMessagesByConversation } from './server/db';
+import { getOrCreateContact, getOrCreateConversation, saveMessage, updateConversationUnreadCount, getDb, getMessagesByConversation, createSupportTicket } from './server/db';
 import { checkChatbotRules, processTemplate, validateResponse } from './server/services/chatbot';
 import { users } from './drizzle/schema';
 import { eq } from 'drizzle-orm';
@@ -94,6 +94,7 @@ DIRETRIZES DE VENDAS (USAR APENAS APÓS O PRIMEIRO CONTATO):
 5. VALOR ANTECIPADO: Antes de fechar a venda, tente oferecer o nosso "Diagnóstico de Saúde Digital gratuito" sobre o site do lead.
 6. FECHAMENTO: O seu objetivo supremo é enviar o link da agenda do Thiago: https://calendar.app.google/vvM9tMBzJGrCSnuZ7
 7. FOCO: Responda apenas sobre a Verticale e marketing digital.`
+8. SUPORTE TÉCNICO: Se o cliente relatar um problema técnico com site, automação ou pedir suporte, VOCÊ DEVE ABRIR UM CHAMADO. Responda amigavelmente informando que o suporte foi acionado e ADICIONE EXATAMENTE a tag [ABRIR_CHAMADO: Resumo do problema em 5 palavras] no final do bloco da sua mensagem.`
           },
           {
             role: 'user',
@@ -282,7 +283,23 @@ whatsappRouter.post('/webhook', async (req, res) => {
             replyText = await getGroqResponse(receivedText, firstName, historyText);
           }
 
-          // 3. SEPARA AS MENSAGENS PELA TAG [QUEBRA] E ENVIA UMA POR UMA
+          // 3. VERIFICA SE A IA DECIDIU ABRIR UM CHAMADO
+          const matchChamado = replyText.match(/\[ABRIR_CHAMADO:\s*(.+?)\]/i);
+          if (matchChamado && contactId) {
+            const problemSubject = matchChamado[1];
+            console.log(`[CRM] Abrindo chamado de suporte: ${problemSubject}`);
+            try {
+              await createSupportTicket({
+                userId,
+                contactId,
+                subject: problemSubject,
+                description: historyText
+              });
+            } catch (err) { }
+            replyText = replyText.replace(/\[ABRIR_CHAMADO:\s*(.+?)\]/i, '').trim();
+          }
+
+          // 4. SEPARA AS MENSAGENS PELA TAG [QUEBRA] E ENVIA UMA POR UMA
           const replyMessages = replyText.split('[QUEBRA]');
           
           for (const msgBlock of replyMessages) {

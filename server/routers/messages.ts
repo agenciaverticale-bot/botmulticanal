@@ -1,5 +1,8 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
+import { getDb } from "../db";
+import { supportTickets, conversations } from "../../drizzle/schema";
+import { eq, desc } from "drizzle-orm";
 import {
   getConversationsByUserId,
   getMessagesByConversation,
@@ -137,7 +140,67 @@ export const messagesRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      return getContactsByUserId(ctx.user.id, input.platform);
+      const db = await getDb();
+      const allContacts = await getContactsByUserId(ctx.user.id, input.platform);
+      
+      if (!db) return allContacts;
+
+      // Enriquecer com métricas de chamados e conversas
+      const enriched = await Promise.all(allContacts.map(async (c: any) => {
+        const tks = await db.select({ id: supportTickets.id }).from(supportTickets).where(eq(supportTickets.contactId, c.id));
+        const convs = await db.select({ id: conversations.id }).from(conversations).where(eq(conversations.contactId, c.id));
+        return {
+          ...c,
+          customerCode: `CLI-${String(c.id).padStart(4, '0')}`,
+          ticketCount: tks.length,
+          interactionsCount: convs.length
+        };
+      }));
+      
+      return enriched;
+    }),
+
+  /**
+   * Obter chamados do contato
+   */
+  getContactTickets: protectedProcedure
+    .input(z.object({ contactId: z.number() }))
+    .query(async ({ input }) => {
+       const db = await getDb();
+       if (!db) return [];
+       return db.select().from(supportTickets).where(eq(supportTickets.contactId, input.contactId)).orderBy(desc(supportTickets.createdAt));
+    }),
+
+  /**
+   * Importar contatos em lote (CSV/Excel)
+   */
+  importContacts: protectedProcedure
+    .input(
+      z.object({
+        contacts: z.array(
+          z.object({
+            name: z.string(),
+            phoneNumber: z.string(),
+            platform: z.enum(["whatsapp", "instagram"]),
+            externalId: z.string(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      let imported = 0;
+      for (const contact of input.contacts) {
+        try {
+          await getOrCreateContact(ctx.user.id, contact.externalId, contact.platform, {
+            name: contact.name,
+            phoneNumber: contact.phoneNumber,
+          });
+          imported++;
+        } catch (error) {
+          console.error("[Messages Router] Erro ao importar contato:", error);
+        }
+      }
+      return { success: true, imported };
     }),
 
   /**
