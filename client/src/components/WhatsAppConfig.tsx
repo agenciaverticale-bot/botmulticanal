@@ -1,0 +1,85 @@
+import { useState, useEffect } from 'react';
+import { QrCode, RefreshCw, Smartphone, VolumeX, Volume2 } from 'lucide-react';
+import axios from 'axios';
+
+export function WhatsAppConfig() {
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    axios.get('/api/whatsapp/mute').then(res => setIsMuted(res.data.isMuted)).catch(() => {});
+  }, []);
+
+  const toggleMute = async () => {
+    try {
+      const res = await axios.post('/api/whatsapp/mute', { isMuted: !isMuted });
+      setIsMuted(res.data.isMuted);
+    } catch (err) {
+      console.error('Erro ao alterar status do bot');
+    }
+  };
+
+  const fetchQRCode = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Chama a rota que criamos no backend
+      const response = await axios.get('/api/whatsapp/qrcode');
+      setQrCode(response.data.qrCode);
+    } catch (err) {
+      setError('Não foi possível carregar o QR Code. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 max-w-md">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-3 bg-green-100 text-green-600 rounded-lg">
+          <Smartphone className="w-6 h-6" />
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-800">WhatsApp Bot</h2>
+            <button 
+              onClick={toggleMute}
+              className={`p-2 rounded-full transition-colors ${isMuted ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'}`}
+              title={isMuted ? "Ativar Bot" : "Silenciar Bot"}
+            >
+              {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+            </button>
+          </div>
+          <p className="text-sm text-gray-500">
+            {isMuted ? "Bot silenciado (Não enviará respostas)" : "Conecte seu aparelho escaneando o código"}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-lg border border-dashed border-gray-200 min-h-[300px]">
+        {loading ? (
+          <div className="flex flex-col items-center text-gray-500">
+            <RefreshCw className="w-8 h-8 animate-spin mb-4" />
+            <p>Gerando conexão segura...</p>
+          </div>
+        ) : qrCode ? (
+          <div className="flex flex-col items-center">
+            <img src={qrCode} alt="WhatsApp QR Code" className="w-64 h-64 rounded shadow-sm bg-white p-2" />
+            <p className="mt-4 text-sm font-medium text-gray-600 text-center">Abra o WhatsApp no celular e escaneie o código acima.</p>
+          </div>
+        ) : (
+          <button
+            onClick={fetchQRCode}
+            className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+          >
+            <QrCode className="w-5 h-5" />
+            Gerar QR Code
+          </button>
+        )}
+        {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
+      </div>
+    </div>
+  );
+}
