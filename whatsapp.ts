@@ -58,12 +58,12 @@ NOTA: Todos os pacotes possuem 5% de desconto para pagamento à vista via PIX. U
 `;
 
 // Função para buscar resposta da Inteligência Artificial (Groq)
-async function getGroqResponse(message: string, userName: string): Promise<string> {
+async function getGroqResponse(message: string, firstName: string): Promise<string> {
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
   // Puxa a URL do painel ou usa o padrão da Groq/OpenAI
   const GROQ_API_URL = process.env.GROQ_API_URL || 'https://api.groq.com/openai/v1';
   
-  if (!GROQ_API_KEY) return `🤖 Olá ${userName}! Recebi sua mensagem: "${message}".`;
+  if (!GROQ_API_KEY) return `Olá ${firstName}! Recebi sua mensagem: "${message}".`;
   
   try {
     const response = await axios.post(
@@ -73,7 +73,7 @@ async function getGroqResponse(message: string, userName: string): Promise<strin
         messages: [
           {
             role: 'system',
-            content: `Você é o estrategista digital e representante oficial da Agência Verticale. O nome do lead com quem você conversa é ${userName}.
+            content: `Você é o estrategista digital e representante oficial da Agência Verticale. O nome do lead com quem você conversa é ${firstName}.
 
 BASE DE CONHECIMENTO (Use estas informações para responder as dúvidas do cliente):
 ${KNOWLEDGE_BASE}
@@ -85,8 +85,10 @@ DIRETRIZES DE COMPORTAMENTO, PERSUASÃO E VENDAS:
 4. Autoridade e Prova Social: Cite sutilmente as 7 certificações do Thiago, sua nota 10 na faculdade e experiências (Newlift, Worktop) para demonstrar que a metodologia é testada. Humanize a conversa com dados biográficos dele (pai, 40 anos, SJC) quando for estratégico para criar afeição.
 5. Escassez e Urgência: Acione a regra de limitação de vagas (só 2 de branding) para gerar senso de urgência e valorização.
 6. Contorno de Objeções e Fechamento: Trate hesitações usando o script de objeções. Em seguida, faça a transição para o agendamento: "Vejo que sua empresa tem um enorme potencial de escala. O Thiago gostaria de te apresentar um plano de ação 360º personalizado. O objetivo é dar clareza, sem compromisso." USE SEMPRE ESTE LINK: https://calendar.app.google/vvM9tMBzJGrCSnuZ7
-7. Foco e Estilo: Responda APENAS sobre a Verticale e marketing digital. Negue educadamente outros assuntos. Mantenha a resposta curta e direta.
-8. Tonalidade 100% Humana (ANTI-IA): Respostas diretas, sem muita enrolação, limite a quantidade de texto. NÃO USE EMOJIS em hipótese alguma. Escreva de forma natural, casual e fluida, como uma pessoa real conversando no WhatsApp. NUNCA use formatações robóticas, listas numeradas ou jargões complexos que entreguem que você é uma Inteligência Artificial.`
+7. SEJA LITERAL E COMPLETO: Ao descrever os pacotes de serviços, hospedagem ou contrato, NÃO omita informações. Cite os valores, as condições de parcelamento e o desconto de 5% no PIX exatamente como constam na base.
+8. MENSAGENS CURTAS E DIVIDIDAS: Para não enviar blocos de texto gigantes, DIVIDA sua resposta. É OBRIGATÓRIO usar a exata tag [QUEBRA] para separar os blocos de mensagens. (Exemplo: "Olá, tudo bem? [QUEBRA] Vi que você precisa de um site... [QUEBRA] Nossos pacotes são...")
+9. Foco Absoluto: Responda APENAS sobre a Verticale e marketing digital. Negue educadamente outros assuntos.
+10. Tonalidade 100% Humana (ANTI-IA): NÃO USE EMOJIS em hipótese alguma. Escreva de forma natural, casual e fluida, como uma pessoa no WhatsApp. NUNCA use formatações robóticas, tópicos com asteriscos ou jargões de IA.`
           },
           {
             role: 'user',
@@ -100,11 +102,9 @@ DIRETRIZES DE COMPORTAMENTO, PERSUASÃO E VENDAS:
     );
     return response.data.choices[0].message.content;
   } catch (error: any) {
-    console.error('❌ Erro na IA da Groq:', error?.response?.data || error.message);
-    return `🤖 Olá ${userName}! Recebi sua mensagem, mas meu cérebro (IA) está descansando agora. Em breve um humano te responderá!`;
     const apiError = error?.response?.data?.error?.message || error?.response?.data || error.message;
     console.error('❌ Erro na IA da Groq:', apiError);
-    return `🤖 [DEBUG DA IA] Erro na API: ${JSON.stringify(apiError)}`;
+      return `[DEBUG DA IA] Erro na API: ${JSON.stringify(apiError)}`;
   }
 }
 
@@ -210,14 +210,16 @@ whatsappRouter.post('/webhook', async (req, res) => {
       if (receivedText) {
         const phoneNumber = senderId.split('@')[0];
         const pushName = messageData.pushName || phoneNumber;
+        const firstName = pushName.trim().split(/\s+/)[0]; // Extrai só o primeiro nome
 
-        console.log(`💬 Nova mensagem de ${pushName} (${phoneNumber}): "${receivedText}"`);
+        console.log(`💬 Nova mensagem de ${firstName} (${phoneNumber}): "${receivedText}"`);
 
         let contactId: number | undefined;
         let conversationId: number | undefined;
         let userId = 1; // Fallback
         
         // 1. SALVA A MENSAGEM NO BANCO DE DADOS (CRM)
+        console.log(`[CRM] Salvando contato e mensagem no banco...`);
         try {
           const db = await getDb();
           if (db) {
@@ -225,7 +227,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
             if (adminUser.length > 0) userId = adminUser[0].id;
           }
 
-          const contact = await getOrCreateContact(userId, phoneNumber, "whatsapp", { name: pushName, phoneNumber });
+          const contact = await getOrCreateContact(userId, phoneNumber, "whatsapp", { name: firstName, phoneNumber });
           const conversation = await getOrCreateConversation(userId, contact.id, "whatsapp");
           
           contactId = contact.id;
@@ -244,6 +246,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
           });
 
           await updateConversationUnreadCount(conversationId, (conversation.unreadCount || 0) + 1);
+          console.log(`[CRM] Mensagem salva com sucesso! (Conversation: ${conversationId})`);
         } catch (dbError) {
           console.error('❌ Erro ao salvar mensagem no CRM:', dbError);
         }
@@ -257,37 +260,37 @@ whatsappRouter.post('/webhook', async (req, res) => {
 
           if (chatbotMatch && validateResponse(chatbotMatch.response)) {
             replyText = processTemplate(chatbotMatch.response, {
-              contactName: pushName,
+              contactName: firstName,
               platform: "whatsapp",
             });
           } else {
             // Resposta padrão (Caso não encontre nenhuma regra correspondente)
-            replyText = await getGroqResponse(receivedText, pushName);
+            replyText = await getGroqResponse(receivedText, firstName);
           }
 
-          // Envia a resposta pelo WhatsApp
-          await axios.post(
-            `${EVOLUTION_URL}/message/sendText/${INSTANCE_NAME}`,
-            {
-              number: senderId,
-              text: replyText
-            },
-            { headers: { apikey: API_KEY } }
-          );
+          // 3. SEPARA AS MENSAGENS PELA TAG [QUEBRA] E ENVIA UMA POR UMA
+          const replyMessages = replyText.split('[QUEBRA]');
           
-          // 3. SALVA A RESPOSTA DO BOT NO CRM PARA VOCÊ LER
-          if (contactId && conversationId) {
-            await saveMessage({
-              conversationId, 
-              contactId, 
-              userId, 
-              platform: "whatsapp",
-              direction: "outbound", 
-              messageType: "text", 
-              content: replyText, 
-              status: "sent", 
-              automatedResponse: true,
-            });
+          for (const msgBlock of replyMessages) {
+            const trimmedMsg = msgBlock.trim();
+            if (trimmedMsg) {
+              await axios.post(
+                `${EVOLUTION_URL}/message/sendText/${INSTANCE_NAME}`,
+                { number: senderId, text: trimmedMsg },
+                { headers: { apikey: API_KEY } }
+              );
+              
+              if (contactId && conversationId) {
+                await saveMessage({
+                  conversationId, contactId, userId, platform: "whatsapp",
+                  direction: "outbound", messageType: "text", content: trimmedMsg, 
+                  status: "sent", automatedResponse: true,
+                });
+              }
+              
+              // Delay de ~2 segundos entre os blocos para simular digitação
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
           }
         } catch (error: any) {
           console.error('❌ Erro ao processar resposta automática:', error.response?.data || error.message);
