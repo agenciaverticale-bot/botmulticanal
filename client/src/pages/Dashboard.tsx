@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -132,6 +132,17 @@ function SidebarItem({ icon, label, active, onClick }: { icon: React.ReactNode, 
 
 function ChatView({ conversations }: { conversations: any }) {
   const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
+  const utils = trpc.useUtils();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (selectedConversation) {
+        // Força a atualização em tempo real dos balões da conversa que está aberta
+        utils.messages.invalidate();
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [selectedConversation, utils]);
 
   return (
     <div className="h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] grid grid-cols-1 lg:grid-cols-3 gap-6">

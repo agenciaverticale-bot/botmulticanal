@@ -224,7 +224,13 @@ export async function getContactsByUserId(userId: number, platform?: "whatsapp" 
   const db = await getDb();
   if (!db) return [];
 
-  const conditions = [eq(contacts.userId, userId)];
+  const userObj = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const isAdmin = userObj.length > 0 && userObj[0].role === 'admin';
+
+  const conditions = [];
+  if (!isAdmin) {
+    conditions.push(eq(contacts.userId, userId));
+  }
   if (platform) {
     conditions.push(eq(contacts.platform, platform));
   }
@@ -232,7 +238,7 @@ export async function getContactsByUserId(userId: number, platform?: "whatsapp" 
   return db
     .select()
     .from(contacts)
-    .where(and(...conditions))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(contacts.lastInteractionAt));
 }
 
@@ -290,7 +296,13 @@ export async function getConversationsByUserId(userId: number, status?: "open" |
   const db = await getDb();
   if (!db) return [];
 
-  const conditions = [eq(conversations.userId, userId)];
+  const userObj = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const isAdmin = userObj.length > 0 && userObj[0].role === 'admin';
+
+  const conditions = [];
+  if (!isAdmin) {
+    conditions.push(eq(conversations.userId, userId));
+  }
   if (status) {
     conditions.push(eq(conversations.status, status));
   }
@@ -298,7 +310,7 @@ export async function getConversationsByUserId(userId: number, status?: "open" |
   return db
     .select()
     .from(conversations)
-    .where(and(...conditions))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(conversations.lastMessageAt));
 }
 
@@ -371,16 +383,22 @@ export async function getUnreadMessageCount(userId: number) {
   const db = await getDb();
   if (!db) return 0;
 
+  const userObj = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const isAdmin = userObj.length > 0 && userObj[0].role === 'admin';
+
+  const conditions = [
+    eq(messages.direction, "inbound"),
+    eq(messages.status, "sent")
+  ];
+  
+  if (!isAdmin) {
+    conditions.push(eq(messages.userId, userId));
+  }
+
   const result = await db
     .select({ count: messages.id })
     .from(messages)
-    .where(
-      and(
-        eq(messages.userId, userId),
-        eq(messages.direction, "inbound"),
-        eq(messages.status, "sent")
-      )
-    );
+    .where(and(...conditions));
 
   return result.length;
 }
