@@ -97,6 +97,8 @@ PORT=3000
 DATABASE_URL=postgresql://postgres:Contato@2026@db.uxvntliomktkrojnlbwi.supabase.co:5432/postgres
 SUPABASE_URL=https://uxvntliomktkrojnlbwi.supabase.co
 SUPABASE_KEY=sb_publishable_Ivq2WQtgQxh76bhbjWvk7Q_IA9KREHD
+VITE_SUPABASE_URL=https://uxvntliomktkrojnlbwi.supabase.co
+VITE_SUPABASE_ANON_KEY=sb_publishable_Ivq2WQtgQxh76bhbjWvk7Q_IA9KREHD
 
 # Evolution API
 EVOLUTION_API_URL=https://minha-api-whatsapp-gof4.onrender.com
@@ -119,6 +121,8 @@ VITE_FRONTEND_FORGE_API_KEY=sua_chave_aqui
 - **DATABASE_URL**: Do Supabase (Settings → Database)
 - **SUPABASE_URL**: Do Supabase (Settings → API)
 - **SUPABASE_KEY**: Do Supabase (Settings → API)
+- **VITE_SUPABASE_URL**: A mesma URL do Supabase, exposta para o frontend
+- **VITE_SUPABASE_ANON_KEY**: A mesma Key do Supabase, exposta para o frontend
 - **EVOLUTION_API_URL**: URL da sua Evolution API rodando no Render
 - **EVOLUTION_API_KEY**: Global API Key configurada na Evolution API
 - **JWT_SECRET**: Gere uma chave segura (use `openssl rand -base64 32`)

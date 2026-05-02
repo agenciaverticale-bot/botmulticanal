@@ -123,6 +123,8 @@ PORT=3000
 DATABASE_URL=postgresql://postgres:Contato@2026@db.uxvntliomktkrojnlbwi.supabase.co:5432/postgres
 SUPABASE_URL=https://uxvntliomktkrojnlbwi.supabase.co
 SUPABASE_KEY=sb_publishable_Ivq2WQtgQxh76bhbjWvk7Q_IA9KREHD
+VITE_SUPABASE_URL=https://uxvntliomktkrojnlbwi.supabase.co
+VITE_SUPABASE_ANON_KEY=sb_publishable_Ivq2WQtgQxh76bhbjWvk7Q_IA9KREHD
 
 EVOLUTION_API_URL=https://minha-api-whatsapp-gof4.onrender.com
 EVOLUTION_API_KEY=269b25b90301acfd3f41cad77b9f48df
