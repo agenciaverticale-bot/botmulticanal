@@ -15,7 +15,7 @@ export async function generateResponseSuggestion(
 
     // Montar histórico formatado
     const historyText = conversationHistory
-      .map((msg) => {
+      .map((msg: any) => {
         const sender = msg.direction === "inbound" ? (contactName || "Cliente") : "Você";
         return `${sender}: ${msg.content}`;
       })

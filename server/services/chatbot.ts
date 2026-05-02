@@ -11,16 +11,16 @@ export async function checkChatbotRules(
   try {
     const rules = await getChatbotRules(userId);
     const filteredRules = rules.filter(
-      (r) => r.platform === "both" || r.platform === platform
+      (r: any) => r.platform === "both" || r.platform === platform
     );
 
     for (const rule of filteredRules) {
-      const keywords = rule.triggerKeywords.split(",").map((k) => k.trim().toLowerCase());
+      const keywords = rule.triggerKeywords.split(",").map((k: string) => k.trim().toLowerCase());
 
       const messageWords = message.toLowerCase();
 
       // Verificar se alguma palavra-chave está presente na mensagem
-      const triggered = keywords.some((keyword) => messageWords.includes(keyword));
+      const triggered = keywords.some((keyword: string) => messageWords.includes(keyword));
 
       if (triggered) {
         return {

@@ -239,23 +239,27 @@ whatsappRouter.post('/webhook', async (req, res) => {
           contactId = contact.id;
           conversationId = conversation.id;
 
-          await saveMessage({
-            conversationId,
-            contactId,
-            userId,
-            externalMessageId: messageData.key.id,
-            platform: "whatsapp",
-            direction: "inbound",
-            messageType: "text",
-            content: receivedText,
-            status: "delivered",
-          });
+          if (contactId && conversationId) {
+            await saveMessage({
+              conversationId,
+              contactId,
+              userId,
+              externalMessageId: messageData.key.id,
+              platform: "whatsapp",
+              direction: "inbound",
+              messageType: "text",
+              content: receivedText,
+              status: "delivered",
+            });
+          }
 
-          await updateConversationUnreadCount(conversationId, (conversation.unreadCount || 0) + 1);
+          if (conversationId) {
+            await updateConversationUnreadCount(conversationId, (conversation.unreadCount || 0) + 1);
+          }
           console.log(`[CRM] Mensagem salva com sucesso! (Conversation: ${conversationId})`);
           
           // Busca o histórico formatado para a IA
-          const msgs = await getMessagesByConversation(conversationId, 8); // Pega as últimas 8 mensagens
+          const msgs = conversationId ? await getMessagesByConversation(conversationId, 8) : []; // Pega as últimas 8 mensagens
           historyText = msgs.map((m: any) => `[${m.direction === 'inbound' ? 'Cliente' : 'Sender'}]: ${m.content}`).join('\n');
         } catch (dbError) {
           console.error('❌ Erro ao salvar mensagem no CRM:', dbError);

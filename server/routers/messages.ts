@@ -23,22 +23,23 @@ export const messagesRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      const conversations = await getConversationsByUserId(ctx.user.id, input.status);
+      try {
+        const conversations = await getConversationsByUserId(ctx.user.id, input.status);
+        const allContacts = await getContactsByUserId(ctx.user.id);
 
-      // Enriquecer com informações de contato
-      const enriched = await Promise.all(
-        conversations.map(async (conv) => {
-          const contact = await getContactsByUserId(ctx.user.id);
-          const contactData = contact.find((c) => c.id === conv.contactId);
-
+        const enriched = conversations.map((conv: any) => {
+          const contactData = allContacts.find((c: any) => c.id === conv.contactId);
           return {
             ...conv,
-            contact: contactData,
+            contact: contactData || { name: "Desconhecido", phoneNumber: "Sem número" },
           };
-        })
-      );
+        });
 
-      return enriched;
+        return enriched;
+      } catch (error) {
+        console.error("[Messages Router] Erro ao buscar conversas:", error);
+        return [];
+      }
     }),
 
   /**
@@ -144,8 +145,8 @@ export const messagesRouter = router({
    */
   getDashboardStats: protectedProcedure.query(async ({ ctx }) => {
     const conversations = await getConversationsByUserId(ctx.user.id);
-    const openConversations = conversations.filter((c) => c.status === "open");
-    const totalUnread = openConversations.reduce((sum, c) => sum + c.unreadCount, 0);
+    const openConversations = conversations.filter((c: any) => c.status === "open");
+    const totalUnread = openConversations.reduce((sum: number, c: any) => sum + c.unreadCount, 0);
 
     const settings = await getNotificationSettings(ctx.user.id);
 

@@ -83,10 +83,10 @@ export async function checkImportantKeywords(
       return;
     }
 
-    const keywords = settings.notifyOnImportantKeywords.split(",").map((k) => k.trim().toLowerCase());
+    const keywords = settings.notifyOnImportantKeywords.split(",").map((k: string) => k.trim().toLowerCase());
 
     const messageWords = message.toLowerCase();
-    const foundKeywords = keywords.filter((k) => messageWords.includes(k));
+    const foundKeywords = keywords.filter((k: string) => messageWords.includes(k));
 
     if (foundKeywords.length > 0) {
       const title = `🔔 Mensagem importante de ${contactName}`;

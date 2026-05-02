@@ -239,7 +239,7 @@ export async function getContactsByUserId(userId: number, platform?: "whatsapp" 
     .select()
     .from(contacts)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(contacts.lastInteractionAt));
+    .orderBy(desc(contacts.createdAt));
 }
 
 // Conversations
@@ -311,7 +311,7 @@ export async function getConversationsByUserId(userId: number, status?: "open" |
     .select()
     .from(conversations)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(conversations.lastMessageAt));
+    .orderBy(desc(conversations.createdAt));
 }
 
 export async function updateConversationUnreadCount(conversationId: number, count: number) {

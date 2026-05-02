@@ -113,7 +113,7 @@ router.post("/", async (req: Request, res: Response) => {
 
       // Validar resposta
       if (validateResponse(response)) {
-        let messageStatus = "sent";
+        let messageStatus: "sent" | "delivered" | "read" | "failed" = "sent";
 
         try {
           await sendWhatsAppMessage(userId, phoneNumber, response);
