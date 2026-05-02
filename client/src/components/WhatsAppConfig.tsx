@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { QrCode, RefreshCw, Smartphone, VolumeX, Volume2 } from 'lucide-react';
+import { QrCode, RefreshCw, Smartphone, VolumeX, Volume2, CheckCircle2 } from 'lucide-react';
 import axios from 'axios';
 
 export function WhatsAppConfig() {
@@ -7,10 +7,34 @@ export function WhatsAppConfig() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [status, setStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
 
   useEffect(() => {
     axios.get('/api/whatsapp/mute').then(res => setIsMuted(res.data.isMuted)).catch(() => {});
+    checkConnectionStatus();
   }, []);
+
+  useEffect(() => {
+    let interval: any;
+    // Se o QR Code está na tela, fica checando a cada 5 segundos se o celular já leu
+    if (qrCode && status !== 'connected') {
+      interval = setInterval(() => checkConnectionStatus(), 5000);
+    }
+    return () => clearInterval(interval);
+  }, [qrCode, status]);
+
+  const checkConnectionStatus = async () => {
+    try {
+      const res = await axios.get('/api/whatsapp/status');
+      if (res.data.state === 'open') {
+        setStatus('connected');
+      } else {
+        setStatus('disconnected');
+      }
+    } catch {
+      setStatus('disconnected');
+    }
+  };
 
   const toggleMute = async () => {
     try {
@@ -60,7 +84,18 @@ export function WhatsAppConfig() {
       </div>
 
       <div className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-lg border border-dashed border-gray-200 min-h-[300px]">
-        {loading ? (
+        {status === 'checking' ? (
+          <div className="flex flex-col items-center text-gray-500">
+            <RefreshCw className="w-8 h-8 animate-spin mb-4" />
+            <p>Verificando conexão...</p>
+          </div>
+        ) : status === 'connected' ? (
+          <div className="flex flex-col items-center text-green-600">
+            <CheckCircle2 className="w-16 h-16 mb-4" />
+            <h3 className="text-xl font-bold text-gray-800">Bot Conectado!</h3>
+            <p className="text-gray-600 text-center mt-2">Seu WhatsApp está ativo e recebendo mensagens.</p>
+          </div>
+        ) : loading ? (
           <div className="flex flex-col items-center text-gray-500">
             <RefreshCw className="w-8 h-8 animate-spin mb-4" />
             <p>Gerando conexão segura...</p>

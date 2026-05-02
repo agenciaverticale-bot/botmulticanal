@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import axios from 'axios';
+import { getOrCreateContact, getOrCreateConversation, saveMessage, updateConversationUnreadCount } from './server/db';
 
 export const whatsappRouter = Router();
 
@@ -20,6 +21,37 @@ whatsappRouter.post('/mute', (req, res) => {
   isBotMuted = req.body.isMuted;
   console.log(`[WhatsApp] Status do Bot alterado. Silenciado: ${isBotMuted}`);
   res.json({ isMuted: isBotMuted });
+});
+
+whatsappRouter.get('/status', async (req, res) => {
+  try {
+    const response = await axios.get(
+      `${EVOLUTION_URL}/instance/connectionState/${INSTANCE_NAME}`,
+      { headers: { apikey: API_KEY } }
+    );
+    const state = response.data?.instance?.state || 'disconnected';
+    
+    if (state === 'open') {
+      // Garante que a Evolution API vai mandar o webhook para o seu domínio real
+      try {
+        await axios.post(
+          `${EVOLUTION_URL}/webhook/set/${INSTANCE_NAME}`,
+          {
+            webhook: {
+              url: "https://crm.agenciaverticale.com.br/api/whatsapp/webhook",
+              byEvents: false,
+              base64: false,
+              events: ["MESSAGES_UPSERT"]
+            }
+          },
+          { headers: { apikey: API_KEY } }
+        );
+      } catch (e) { }
+    }
+    res.json({ state });
+  } catch (error) {
+    res.json({ state: 'disconnected' });
+  }
 });
 
 whatsappRouter.get('/qrcode', async (req, res) => {
